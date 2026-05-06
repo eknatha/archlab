@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArchLab — AI Architecture Diagram Generator | eknathalabs.com</title>
+<meta name="description" content="Generate production-grade architecture diagrams for AWS, Azure, GCP, Kubernetes, CI/CD, Terraform, Docker, and more. Powered by AI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080a0f;
+  --surface: #0f1117;
+  --surface2: #161b25;
+  --surface3: #1c2235;
+  --border: #252c3f;
+  --border2: #333d57;
+  --text: #e4e8f4;
+  --text2: #8892b0;
+  --text3: #4a5470;
+  --accent: #4ade80;
+  --accent2: #22d3ee;
+  --accent3: #a78bfa;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --aws: #ff9900; --azure: #0078d4; --gcp: #4285f4; --k8s: #326ce5;
+  --cicd: #10b981; --tf: #7b42f6; --docker: #2496ed; --net: #f59e0b; --obs: #06b6d4;
+  --sidebar-w: 310px;
+  --svg-bg: #0f1117;
+  --svg-node: #1c2235;
+  --svg-text1: #e4e8f4;
+  --svg-text2: #8892b0;
+  --svg-group-text: #4a5470;
+  --svg-edge: #4ade80;
+}
+
+/* ── LIGHT THEME ── */
+[data-theme="light"] {
+  --bg: #f0f2f7;
+  --surface: #ffffff;
+  --surface2: #f0f2f7;
+  --surface3: #e4e8f2;
+  --border: #d0d6e8;
+  --border2: #b0bad4;
+  --text: #1a1f35;
+  --text2: #4a5570;
+  --text3: #8892b0;
+  --accent: #16a34a;
+  --accent2: #0891b2;
+  --accent3: #7c3aed;
+  --red: #dc2626;
+  --amber: #d97706;
+  --svg-bg: #ffffff;
+  --svg-node: #f8faff;
+  --svg-text1: #1a1f35;
+  --svg-text2: #4a5570;
+  --svg-group-text: #8892b0;
+  --svg-edge: #16a34a;
+}
+[data-theme="light"] body::before {
+  background-image:
+    linear-gradient(rgba(22,163,74,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(22,163,74,0.04) 1px,transparent 1px);
+}
+[data-theme="light"] body::after {
+  background:radial-gradient(circle,rgba(22,163,74,0.06) 0%,transparent 70%);
+}
+[data-theme="light"] .pbtn[data-p="aws"].active   { background:#fff5e6; }
+[data-theme="light"] .pbtn[data-p="azure"].active { background:#e6f2ff; }
+[data-theme="light"] .pbtn[data-p="gcp"].active   { background:#e8f0fe; }
+[data-theme="light"] .pbtn[data-p="k8s"].active   { background:#eef2ff; }
+[data-theme="light"] .pbtn[data-p="cicd"].active  { background:#ecfdf5; }
+[data-theme="light"] .pbtn[data-p="tf"].active    { background:#f5f3ff; }
+[data-theme="light"] .pbtn[data-p="docker"].active{ background:#eff6ff; }
+[data-theme="light"] .pbtn[data-p="net"].active   { background:#fffbeb; }
+[data-theme="light"] .pbtn[data-p="obs"].active   { background:#ecfeff; }
+[data-theme="light"] .apikey-section { background:rgba(124,58,237,0.04); }
+[data-theme="light"] .prompt-hint { background:rgba(22,163,74,0.04); border-color:rgba(22,163,74,0.15); }
+[data-theme="light"] .badge-ai { background:rgba(22,163,74,0.1); border-color:rgba(22,163,74,0.3); }
+[data-theme="light"] .diagram-wrap { background:#fff; }
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'Syne',sans-serif; overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Grid background */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(74,222,128,0.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(74,222,128,0.018) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+
+/* Corner glow */
+body::after {
+  content:''; position:fixed; top:-200px; right:-200px; width:600px; height:600px;
+  border-radius:50%; pointer-events:none; z-index:0;
+  background:radial-gradient(circle, rgba(74,222,128,0.04) 0%, transparent 70%);
+}
+
+.app { position:relative; z-index:1; display:flex; flex-direction:column; height:100vh; }
+
+/* ── HEADER ── */
+header {
+  border-bottom:1px solid var(--border); padding:0 1.25rem; height:52px;
+  display:flex; align-items:center; justify-content:space-between;
+  background:rgba(8,10,15,0.92); backdrop-filter:blur(16px);
+  flex-shrink:0; position:relative; z-index:200;
+}
+.logo { display:flex; align-items:center; gap:9px; text-decoration:none; }
+.logo-mark {
+  width:28px; height:28px; border-radius:7px;
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+  display:grid; place-items:center; font-size:14px; flex-shrink:0;
+}
+.logo-text { font-size:16px; font-weight:800; letter-spacing:-0.5px; color:var(--text); }
+.logo-text span { color:var(--accent); }
+.logo-sub { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text3); letter-spacing:0.06em; display:block; margin-top:-2px; }
+
+.header-center { display:flex; align-items:center; gap:6px; }
+.mode-pill {
+  display:flex; align-items:center; background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; padding:3px; gap:2px;
+}
+.mode-btn {
+  font-family:'JetBrains Mono',monospace; font-size:10px; padding:4px 10px;
+  border-radius:5px; border:none; cursor:pointer; color:var(--text3);
+  background:transparent; display:flex; align-items:center; gap:5px; transition:all 0.15s;
+  white-space:nowrap;
+}
+.mode-btn.active { background:var(--surface3); color:var(--text); }
+.mode-btn .ai-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 5px var(--accent); animation:pulse 2s infinite; }
+
+.header-right { display:flex; align-items:center; gap:8px; }
+.badge {
+  font-family:'JetBrains Mono',monospace; font-size:9.5px;
+  padding:3px 8px; border-radius:5px; letter-spacing:0.04em;
+}
+.badge-ai { background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.3); color:var(--accent); }
+.badge-offline { background:rgba(139,145,176,0.1); border:1px solid var(--border); color:var(--text3); }
+.hdr-link {
+  font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text3);
+  text-decoration:none; transition:color 0.15s; display:flex; align-items:center; gap:4px;
+}
+.hdr-link:hover { color:var(--accent); }
+
+/* ── LAYOUT ── */
+.main { display:flex; flex:1; overflow:hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width:var(--sidebar-w); flex-shrink:0; border-right:1px solid var(--border);
+  display:flex; flex-direction:column; overflow-y:auto; background:var(--surface);
+  scrollbar-width:thin; scrollbar-color:var(--border2) transparent;
+}
+.sec { padding:0.8rem 1rem; border-bottom:1px solid var(--border); }
+.sec-label { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text3); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:0.65rem; display:flex; align-items:center; gap:5px; }
+
+/* Platform grid */
+.platforms { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; }
+.pbtn {
+  background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+  padding:8px 4px 7px; cursor:pointer; display:flex; flex-direction:column;
+  align-items:center; gap:2px; transition:all 0.15s;
+  font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--text3); text-align:center;
+}
+.pbtn:hover { border-color:var(--border2); background:var(--surface3); color:var(--text2); transform:translateY(-1px); }
+.pbtn .ic { font-size:18px; line-height:1; }
+.pbtn .plabel { margin-top:1px; }
+.pbtn[data-p="aws"].active   { color:var(--aws);    border-color:var(--aws);    background:#140b00; box-shadow:0 0 12px rgba(255,153,0,0.12); }
+.pbtn[data-p="azure"].active { color:var(--azure);  border-color:var(--azure);  background:#00091a; box-shadow:0 0 12px rgba(0,120,212,0.12); }
+.pbtn[data-p="gcp"].active   { color:var(--gcp);    border-color:var(--gcp);    background:#000818; box-shadow:0 0 12px rgba(66,133,244,0.12); }
+.pbtn[data-p="k8s"].active   { color:var(--k8s);    border-color:var(--k8s);    background:#00041a; box-shadow:0 0 12px rgba(50,108,229,0.12); }
+.pbtn[data-p="cicd"].active  { color:var(--cicd);   border-color:var(--cicd);   background:#00120b; box-shadow:0 0 12px rgba(16,185,129,0.12); }
+.pbtn[data-p="tf"].active    { color:var(--tf);     border-color:var(--tf);     background:#0b0015; box-shadow:0 0 12px rgba(123,66,246,0.12); }
+.pbtn[data-p="docker"].active{ color:var(--docker); border-color:var(--docker); background:#000d1a; box-shadow:0 0 12px rgba(36,150,237,0.12); }
+.pbtn[data-p="net"].active   { color:var(--net);    border-color:var(--net);    background:#140e00; box-shadow:0 0 12px rgba(245,158,11,0.12); }
+.pbtn[data-p="obs"].active   { color:var(--obs);    border-color:var(--obs);    background:#001018; box-shadow:0 0 12px rgba(6,182,212,0.12); }
+
+/* Templates */
+.tmpls { display:flex; flex-direction:column; gap:3px; }
+.tbtn {
+  background:var(--surface2); border:1px solid var(--border); border-radius:7px;
+  padding:7px 10px; cursor:pointer; display:flex; align-items:center; gap:8px;
+  transition:all 0.15s; color:var(--text2); font-size:11.5px; text-align:left; width:100%;
+}
+.tbtn:hover { border-color:var(--border2); color:var(--text); background:var(--surface3); }
+.tbtn .ti { font-size:13px; flex-shrink:0; }
+.tbtn .tname { flex:1; }
+.tbtn .tai { font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--accent); background:rgba(74,222,128,0.1); padding:1px 5px; border-radius:3px; flex-shrink:0; }
+
+/* Prompt area */
+.prompt-area { padding:0.8rem 1rem 1rem; display:flex; flex-direction:column; gap:8px; flex:1; }
+.prompt-hint { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text3); line-height:1.6; padding:6px 8px; background:rgba(74,222,128,0.04); border:1px solid rgba(74,222,128,0.1); border-radius:6px; }
+.prompt-hint b { color:var(--accent); }
+textarea {
+  background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:10px 11px;
+  color:var(--text); font-family:'JetBrains Mono',monospace; font-size:11.5px; line-height:1.75;
+  resize:none; height:120px; outline:none; transition:border-color 0.15s; width:100%;
+}
+textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(74,222,128,0.06); }
+textarea::placeholder { color:var(--text3); }
+
+.gen-row { display:flex; gap:6px; }
+.genbtn {
+  flex:1; background:var(--accent); color:#000; border:none; border-radius:9px; padding:11px;
+  font-family:'Syne',sans-serif; font-size:13px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:7px; transition:all 0.18s;
+}
+.genbtn:hover:not(:disabled) { background:#22c55e; transform:translateY(-1px); box-shadow:0 4px 20px rgba(74,222,128,0.25); }
+.genbtn:disabled { opacity:0.45; cursor:not-allowed; transform:none; box-shadow:none; }
+.genbtn.ai-mode { background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%); }
+
+.clrbtn {
+  background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:11px 13px;
+  cursor:pointer; color:var(--text3); transition:all 0.15s; font-size:13px;
+}
+.clrbtn:hover { border-color:var(--border2); color:var(--text2); }
+
+.err {
+  background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.2);
+  border-radius:7px; padding:8px 10px; font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:var(--red); display:none; line-height:1.6;
+}
+
+/* API Key section */
+.apikey-section { background:rgba(167,139,250,0.06); border:1px solid rgba(167,139,250,0.15); border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px; }
+.apikey-label { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--accent3); letter-spacing:0.08em; }
+.apikey-input-row { display:flex; gap:5px; }
+.apikey-input {
+  flex:1; background:var(--surface3); border:1px solid var(--border2); border-radius:6px;
+  padding:6px 8px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text);
+  outline:none; transition:border-color 0.15s;
+}
+.apikey-input:focus { border-color:var(--accent3); }
+.apikey-input::placeholder { color:var(--text3); }
+.apikey-save {
+  background:rgba(167,139,250,0.15); border:1px solid rgba(167,139,250,0.3); border-radius:6px;
+  padding:6px 10px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--accent3);
+  cursor:pointer; transition:all 0.15s; white-space:nowrap;
+}
+.apikey-save:hover { background:rgba(167,139,250,0.25); }
+.apikey-note { font-family:'JetBrains Mono',monospace; font-size:8.5px; color:var(--text3); line-height:1.5; }
+.apikey-note a { color:var(--accent3); }
+
+/* ── CANVAS ── */
+.canvas { flex:1; display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+
+.toolbar {
+  height:44px; border-bottom:1px solid var(--border); display:flex; align-items:center;
+  padding:0 1.25rem; gap:8px; background:var(--surface); flex-shrink:0;
+}
+.toolbar-title {
+  font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text3);
+  margin-right:auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:38%;
+}
+.toolbar-title span { color:var(--accent); }
+
+.vtabs { display:flex; gap:2px; }
+.vtab {
+  background:none; border:none; padding:4px 10px; font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:var(--text3); cursor:pointer; border-radius:5px; transition:all 0.15s;
+}
+.vtab.active { background:var(--surface2); color:var(--text); }
+
+.tbarbtn {
+  background:var(--surface2); border:1px solid var(--border); border-radius:5px;
+  padding:4px 11px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text2);
+  cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.15s; white-space:nowrap;
+}
+.tbarbtn:hover { border-color:var(--border2); color:var(--text); }
+.tbarbtn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* Views */
+.view { flex:1; overflow:auto; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+.diagram-view { display:flex; align-items:flex-start; justify-content:center; padding:1.5rem; }
+.code-view { display:none; padding:1.25rem; }
+
+/* Empty state */
+.empty-state {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:400px; gap:16px; color:var(--text3); text-align:center; padding:2rem; width:100%;
+}
+.empty-gfx { font-size:52px; opacity:0.15; line-height:1; }
+.empty-title { font-size:18px; font-weight:700; color:var(--text2); }
+.empty-sub { font-family:'JetBrains Mono',monospace; font-size:11px; line-height:1.9; max-width:320px; }
+.empty-chips { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:4px; }
+.chip {
+  font-family:'JetBrains Mono',monospace; font-size:9.5px; padding:4px 9px;
+  background:var(--surface2); border:1px solid var(--border); border-radius:5px;
+  color:var(--text3); cursor:pointer; transition:all 0.15s;
+}
+.chip:hover { border-color:var(--accent); color:var(--accent); }
+
+/* Loading */
+.loading { display:none; flex-direction:column; align-items:center; justify-content:center; min-height:400px; gap:20px; width:100%; }
+.ring { width:40px; height:40px; border:2px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.75s linear infinite; }
+.loading-label { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text3); }
+.lsteps { display:flex; flex-direction:column; gap:6px; min-width:260px; }
+.lstep { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text3); opacity:0; transition:opacity 0.35s; display:flex; align-items:center; gap:8px; }
+.lstep .lstep-ic { width:14px; height:14px; border-radius:50%; border:1px solid var(--border2); display:grid; place-items:center; flex-shrink:0; font-size:8px; }
+.lstep.vis { opacity:1; }
+.lstep.done .lstep-ic { background:var(--accent); border-color:var(--accent); color:#000; }
+.lstep.done { color:var(--accent); }
+
+/* Diagram output */
+.diagram-wrap {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:1.5rem; width:100%; min-height:200px; animation:fadeIn 0.4s ease; overflow:auto;
+}
+.ai-badge-wrap { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.ai-tag { font-family:'JetBrains Mono',monospace; font-size:9px; background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.25); color:var(--accent); padding:2px 7px; border-radius:4px; }
+.arch-title { font-size:13px; font-weight:600; color:var(--text2); }
+
+/* Code block */
+.code-block {
+  background:var(--surface); border:1px solid var(--border); border-radius:11px;
+  padding:1.25rem; font-family:'JetBrains Mono',monospace; font-size:11px;
+  line-height:1.95; color:var(--accent2); white-space:pre-wrap; word-break:break-word;
+}
+
+/* Animations */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes spin { to{transform:rotate(360deg)} }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+@keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+
+/* ── THEME TOGGLE ── */
+.theme-btn {
+  width:30px; height:30px; border-radius:7px; border:1px solid var(--border);
+  background:var(--surface2); cursor:pointer; display:grid; place-items:center;
+  font-size:14px; transition:all 0.15s; color:var(--text2); flex-shrink:0;
+}
+.theme-btn:hover { border-color:var(--border2); background:var(--surface3); }
+
+/* ── MOBILE SIDEBAR TOGGLE ── */
+.mobile-toggle {
+  display:none; width:36px; height:36px; border-radius:8px; border:1px solid var(--border);
+  background:var(--surface2); cursor:pointer; place-items:center; font-size:16px;
+  color:var(--text2); flex-shrink:0; transition:all 0.15s;
+}
+.mobile-toggle:hover { border-color:var(--border2); }
+
+/* ── STEP-BY-STEP PANEL ── */
+.sbsbar {
+  display:none; flex-direction:column; background:var(--surface);
+  border-top:1px solid var(--border); padding:0; overflow:hidden;
+  transition:max-height 0.3s ease; max-height:0;
+}
+.sbsbar.open { display:flex; max-height:220px; }
+.sbs-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px 8px; border-bottom:1px solid var(--border);
+}
+.sbs-title { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text3); letter-spacing:0.1em; }
+.sbs-controls { display:flex; align-items:center; gap:6px; }
+.sbs-btn {
+  background:var(--surface2); border:1px solid var(--border); border-radius:5px;
+  padding:3px 9px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text2);
+  cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:4px;
+}
+.sbs-btn:hover:not(:disabled) { border-color:var(--border2); color:var(--text); }
+.sbs-btn:disabled { opacity:0.35; cursor:not-allowed; }
+.sbs-btn.sbs-play { background:rgba(74,222,128,0.1); border-color:rgba(74,222,128,0.3); color:var(--accent); }
+.sbs-progress { display:flex; align-items:center; gap:8px; padding:8px 14px; }
+.sbs-track { flex:1; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+.sbs-fill { height:100%; background:var(--accent); border-radius:2px; transition:width 0.4s ease; }
+.sbs-counter { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text3); white-space:nowrap; }
+.sbs-layers { display:flex; gap:4px; padding:0 14px 10px; flex-wrap:wrap; }
+.sbs-layer-chip {
+  font-family:'JetBrains Mono',monospace; font-size:9px; padding:3px 8px;
+  border-radius:4px; border:1px solid var(--border); background:var(--surface2);
+  color:var(--text3); cursor:pointer; transition:all 0.15s;
+}
+.sbs-layer-chip.active { border-color:var(--accent); color:var(--accent); background:rgba(74,222,128,0.08); }
+
+/* ── BLAST RADIUS ── */
+.blast-overlay {
+  position:absolute; top:8px; right:8px; z-index:10;
+  background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.35);
+  border-radius:8px; padding:8px 12px; display:none; max-width:240px;
+}
+.blast-overlay.visible { display:block; }
+.blast-title { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--red); letter-spacing:0.08em; margin-bottom:5px; }
+.blast-item { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text2); padding:1px 0; display:flex; align-items:center; gap:5px; }
+.blast-item::before { content:'↳'; color:var(--red); opacity:0.7; }
+.blast-dismiss { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text3); cursor:pointer; margin-top:6px; display:block; text-align:right; }
+.blast-dismiss:hover { color:var(--text2); }
+
+/* Click hint on diagram */
+.click-hint {
+  font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text3);
+  padding:3px 8px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:4px; display:inline-flex; align-items:center; gap:4px;
+  margin-left:8px; vertical-align:middle;
+}
+
+/* ── RESPONSIVE / MOBILE ── */
+@media(max-width:768px){
+  .header-center { display:none; }
+  .mobile-toggle { display:grid; }
+  .hdr-link { display:none; }
+  .main { flex-direction:column; position:relative; }
+  .sidebar {
+    width:100%; position:absolute; top:0; left:0; right:0; z-index:50;
+    max-height:0; overflow:hidden; transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1);
+    border-right:none; border-bottom:1px solid var(--border);
+  }
+  .sidebar.mobile-open { max-height:70vh; overflow-y:auto; }
+  .canvas { flex:1; width:100%; }
+  .toolbar { padding:0 0.75rem; gap:5px; overflow-x:auto; }
+  .toolbar-title { display:none; }
+  .tbarbtn { padding:4px 8px; font-size:9px; }
+  .vtab { padding:4px 7px; font-size:9px; }
+  .diagram-view { padding:0.75rem; }
+  .diagram-wrap { padding:1rem; border-radius:10px; }
+  .theme-btn { display:grid; }
+}
+@media(min-width:769px){
+  .sidebar { max-height:none !important; overflow-y:auto; }
+  .mobile-toggle { display:none !important; }
+}
+
+/* AI streaming text effect */
+.streaming-cursor::after {
+  content:'▋'; color:var(--accent); animation:pulse 0.7s infinite;
+}
+
+/* Diagram wrap position context for blast overlay */
+.diagram-wrap { position:relative; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<header>
+  <a href="https://eknathalabs.com" class="logo" target="_blank">
+    <div class="logo-mark">⬡</div>
+    <div>
+      <div class="logo-text">Arch<span>Lab</span></div>
+      <span class="logo-sub">eknathalabs.com</span>
+    </div>
+  </a>
+
+  <div class="header-center">
+    <div class="mode-pill">
+      <button class="mode-btn active" id="mode-ai" onclick="setMode('ai')">
+        <span class="ai-dot"></span> AI Mode
+      </button>
+      <button class="mode-btn" id="mode-offline" onclick="setMode('offline')">
+        ⚡ Offline
+      </button>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <span class="badge badge-ai" id="mode-badge">✦ AI Powered</span>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
+    <button class="mobile-toggle" id="mobile-toggle" onclick="toggleMobileSidebar()">☰</button>
+    <a href="https://eknathalabs.com" class="hdr-link" target="_blank">↗ Labs</a>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Platform -->
+    <div class="sec">
+      <div class="sec-label">⬡ Platform</div>
+      <div class="platforms">
+        <button class="pbtn active" data-p="aws"    onclick="selP(this)"><span class="ic">☁</span><span class="plabel">AWS</span></button>
+        <button class="pbtn"        data-p="azure"  onclick="selP(this)"><span class="ic">🔷</span><span class="plabel">Azure</span></button>
+        <button class="pbtn"        data-p="gcp"    onclick="selP(this)"><span class="ic">🌐</span><span class="plabel">GCP</span></button>
+        <button class="pbtn"        data-p="k8s"    onclick="selP(this)"><span class="ic">⎈</span><span class="plabel">K8s</span></button>
+        <button class="pbtn"        data-p="cicd"   onclick="selP(this)"><span class="ic">🔁</span><span class="plabel">CI/CD</span></button>
+        <button class="pbtn"        data-p="tf"     onclick="selP(this)"><span class="ic">🏗</span><span class="plabel">Terraform</span></button>
+        <button class="pbtn"        data-p="docker" onclick="selP(this)"><span class="ic">🐳</span><span class="plabel">Docker</span></button>
+        <button class="pbtn"        data-p="net"    onclick="selP(this)"><span class="ic">🛡</span><span class="plabel">Network</span></button>
+        <button class="pbtn"        data-p="obs"    onclick="selP(this)"><span class="ic">📊</span><span class="plabel">Observe</span></button>
+      </div>
+    </div>
+
+    <!-- Templates -->
+    <div class="sec">
+      <div class="sec-label">⬡ Quick Templates</div>
+      <div class="tmpls">
+        <button class="tbtn" onclick="useTpl('aws3tier')"><span class="ti">☁</span><span class="tname">AWS 3-Tier Web App</span></button>
+        <button class="tbtn" onclick="useTpl('awsServerless')"><span class="ti">⚡</span><span class="tname">AWS Serverless API</span></button>
+        <button class="tbtn" onclick="useTpl('eksCluster')"><span class="ti">⎈</span><span class="tname">EKS Production Cluster</span></button>
+        <button class="tbtn" onclick="useTpl('azureAks')"><span class="ti">🔷</span><span class="tname">Azure AKS Microservices</span></button>
+        <button class="tbtn" onclick="useTpl('gcpData')"><span class="ti">🌐</span><span class="tname">GCP Data Platform</span></button>
+        <button class="tbtn" onclick="useTpl('githubCicd')"><span class="ti">🔁</span><span class="tname">GitHub Actions CI/CD</span></button>
+        <button class="tbtn" onclick="useTpl('terraformAws')"><span class="ti">🏗</span><span class="tname">Terraform IaC Graph</span></button>
+        <button class="tbtn" onclick="useTpl('dockerCompose')"><span class="ti">🐳</span><span class="tname">Docker Compose Stack</span></button>
+        <button class="tbtn" onclick="useTpl('observability')"><span class="ti">📊</span><span class="tname">Observability Stack</span></button>
+        <button class="tbtn" onclick="useTpl('zeroTrust')"><span class="ti">🔐</span><span class="tname">Zero Trust Network</span></button>
+        <button class="tbtn" onclick="useTpl('awsVpc')"><span class="ti">🌐</span><span class="tname">AWS VPC Architecture</span></button>
+        <button class="tbtn" onclick="useTpl('k8sMicroservices')"><span class="ti">⎈</span><span class="tname">K8s Microservices</span></button>
+      </div>
+    </div>
+
+    <!-- Prompt -->
+    <div class="prompt-area">
+      <div class="sec-label">⬡ Describe Architecture</div>
+
+      <!-- AI Key (AI mode only) -->
+      <div class="apikey-section" id="apikey-section">
+        <div class="apikey-label">API_KEY // Claude (Anthropic)</div>
+        <div class="apikey-input-row">
+          <input type="password" class="apikey-input" id="apikey" placeholder="sk-ant-api03-..." autocomplete="off"/>
+          <button class="apikey-save" onclick="saveKey()">Save</button>
+        </div>
+        <div class="apikey-note">Key stored locally only. Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
+      </div>
+
+      <div class="prompt-hint" id="ai-hint">
+        <b>AI Mode:</b> Describe any architecture in plain English — AI generates a precise diagram with proper components, connections, and groupings.
+      </div>
+      <div class="prompt-hint" id="offline-hint" style="display:none">
+        <b>Offline Mode:</b> Describe architecture using service names. Templates load instantly with no API key needed.
+      </div>
+
+      <textarea id="prompt" placeholder="e.g. A production e-commerce platform on AWS with CloudFront CDN, ALB, ECS Fargate app tier, RDS Aurora PostgreSQL with read replicas, ElastiCache Redis, S3 for assets, SQS for order processing, and CloudWatch monitoring across 2 availability zones...
+
+Press Ctrl+Enter to generate."></textarea>
+      <div class="err" id="err"></div>
+      <div class="gen-row">
+        <button class="genbtn ai-mode" id="genbtn" onclick="generate()">
+          <span id="btn-icon">✦</span><span id="btn-txt">Generate Diagram</span>
+        </button>
+        <button class="clrbtn" onclick="clearCanvas()" title="Clear">✕</button>
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <!-- CANVAS -->
+  <div class="canvas">
+    <div class="toolbar">
+      <span class="toolbar-title" id="diag-title">// select a template or describe your architecture</span>
+      <div class="vtabs">
+        <button class="vtab active" id="tab-d" onclick="switchView('diagram')">Diagram</button>
+        <button class="vtab" id="tab-c" onclick="switchView('code')">DSL</button>
+      </div>
+      <button class="tbarbtn" id="btn-svg" onclick="exportSVG()" disabled>↓ SVG</button>
+      <button class="tbarbtn" id="btn-png" onclick="exportPNG()" disabled>↓ PNG</button>
+      <button class="tbarbtn" id="btn-copy" onclick="copyDSL()" disabled>⎘ DSL</button>
+      <button class="tbarbtn" id="btn-sbs" onclick="toggleSBS()" disabled title="Step-by-step build mode">▶ Steps</button>
+      <button class="tbarbtn" id="btn-blast" onclick="toggleBlastMode()" disabled title="Blast radius — click a node to see impact">💥 Blast</button>
+      <button class="tbarbtn" onclick="zoomFit()">⊞ Fit</button>
+    </div>
+
+    <!-- Step-by-step build panel -->
+    <div class="sbsbar" id="sbsbar">
+      <div class="sbs-header">
+        <span class="sbs-title">⬡ STEP-BY-STEP BUILD MODE</span>
+        <div class="sbs-controls">
+          <button class="sbs-btn" id="sbs-prev" onclick="sbsStep(-1)" disabled>← Prev</button>
+          <button class="sbs-btn sbs-play" id="sbs-playbtn" onclick="sbsTogglePlay()">▶ Play</button>
+          <button class="sbs-btn" id="sbs-next" onclick="sbsStep(1)">Next →</button>
+          <button class="sbs-btn" onclick="toggleSBS()">✕ Close</button>
+        </div>
+      </div>
+      <div class="sbs-progress">
+        <div class="sbs-track"><div class="sbs-fill" id="sbs-fill" style="width:0%"></div></div>
+        <span class="sbs-counter" id="sbs-counter">Layer 0 / 0</span>
+      </div>
+      <div class="sbs-layers" id="sbs-layers"></div>
+    </div>
+
+    <!-- Diagram view -->
+    <div class="view diagram-view" id="view-diagram">
+      <div class="empty-state" id="empty">
+        <div class="empty-gfx">⬡</div>
+        <div class="empty-title">Ready to Architect</div>
+        <div class="empty-sub">Choose a platform, pick a template or describe your architecture, then generate.</div>
+        <div class="empty-chips">
+          <span class="chip" onclick="quickPrompt('aws-3tier')">AWS 3-Tier</span>
+          <span class="chip" onclick="quickPrompt('eks-prod')">EKS Cluster</span>
+          <span class="chip" onclick="quickPrompt('cicd-github')">GitHub CI/CD</span>
+          <span class="chip" onclick="quickPrompt('observability')">Observability</span>
+          <span class="chip" onclick="quickPrompt('zero-trust')">Zero Trust</span>
+        </div>
+      </div>
+      <div class="loading" id="loading">
+        <div class="ring"></div>
+        <div class="lsteps">
+          <div class="lstep" id="s1"><span class="lstep-ic">1</span><span>Parsing architecture tokens…</span></div>
+          <div class="lstep" id="s2"><span class="lstep-ic">2</span><span>Resolving components &amp; relationships…</span></div>
+          <div class="lstep" id="s3"><span class="lstep-ic">3</span><span>Computing layout…</span></div>
+          <div class="lstep" id="s4"><span class="lstep-ic">4</span><span>Rendering diagram…</span></div>
+        </div>
+      </div>
+      <div class="diagram-wrap" id="diag-wrap" style="display:none">
+        <div class="ai-badge-wrap">
+          <span class="ai-tag" id="gen-method-tag">TEMPLATE</span>
+          <span class="arch-title" id="arch-title-display"></span>
+          <span class="click-hint" id="blast-hint" style="display:none">💥 Click a node to see blast radius</span>
+        </div>
+        <div class="blast-overlay" id="blast-overlay">
+          <div class="blast-title">💥 BLAST RADIUS</div>
+          <div id="blast-content"></div>
+          <span class="blast-dismiss" onclick="clearBlast()">dismiss ✕</span>
+        </div>
+        <div id="diag-out"></div>
+      </div>
+    </div>
+
+    <!-- Code/DSL view -->
+    <div class="view code-view" id="view-code">
+      <pre class="code-block" id="code-out"></pre>
+    </div>
+
+  </div><!-- /canvas -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let platform = 'aws';
+let currentTitle = '';
+let currentData = null;
+let appMode = 'ai'; // 'ai' | 'offline'
+
+// ═══════════════════════════════════════════════════════
+//  THEME — Dark / Light with system preference detect
+// ═══════════════════════════════════════════════════════
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('archlab_theme', t);
+  document.getElementById('theme-btn').textContent = t === 'light' ? '🌙' : '☀️';
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+  // Re-render diagram in new theme colors if one exists
+  if (currentData) renderData(currentData, currentTitle, document.getElementById('gen-method-tag').textContent);
+}
+function initTheme() {
+  const saved = localStorage.getItem('archlab_theme');
+  if (saved) { applyTheme(saved); return; }
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(prefersDark ? 'dark' : 'light');
+  // Listen for system changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (!localStorage.getItem('archlab_theme')) applyTheme(e.matches ? 'dark' : 'light');
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  MOBILE SIDEBAR TOGGLE
+// ═══════════════════════════════════════════════════════
+function toggleMobileSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const btn = document.getElementById('mobile-toggle');
+  const isOpen = sb.classList.toggle('mobile-open');
+  btn.textContent = isOpen ? '✕' : '☰';
+}
+// Close sidebar when clicking canvas on mobile
+document.addEventListener('click', e => {
+  if (window.innerWidth > 768) return;
+  const sb = document.querySelector('.sidebar');
+  if (!sb.classList.contains('mobile-open')) return;
+  if (!sb.contains(e.target) && !document.getElementById('mobile-toggle').contains(e.target)) {
+    sb.classList.remove('mobile-open');
+    document.getElementById('mobile-toggle').textContent = '☰';
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+//  STEP-BY-STEP BUILD MODE
+// ═══════════════════════════════════════════════════════
+let sbsLayers = [];   // array of {label, nodeIds[], edgeIds[]}
+let sbsCurrent = 0;
+let sbsPlaying = false;
+let sbsTimer = null;
+
+function buildSBSLayers(data) {
+  // Build layers from groups; if no groups, chunk nodes into layers of 3
+  const layers = [];
+  if (data.groups && data.groups.length) {
+    data.groups.forEach(g => {
+      const nodeIds = (data.nodes || []).filter(n => n.group === g.id).map(n => n.id);
+      if (!nodeIds.length) return;
+      const edgeIds = (data.edges || [])
+        .map((e, i) => ({ e, i }))
+        .filter(({ e }) => nodeIds.includes(e.from) || nodeIds.includes(e.to))
+        .map(({ i }) => i);
+      layers.push({ label: g.label, nodeIds, edgeIds });
+    });
+  }
+  if (!layers.length) {
+    // Fallback: chunk nodes into layers of 3
+    const nodes = data.nodes || [];
+    for (let i = 0; i < nodes.length; i += 3) {
+      const chunk = nodes.slice(i, i + 3).map(n => n.id);
+      const edgeIds = (data.edges || [])
+        .map((e, idx) => ({ e, idx }))
+        .filter(({ e }) => chunk.includes(e.from))
+        .map(({ idx }) => idx);
+      layers.push({ label: `Layer ${Math.floor(i / 3) + 1}`, nodeIds: chunk, edgeIds });
+    }
+  }
+  return layers;
+}
+
+function toggleSBS() {
+  if (!currentData) return;
+  const bar = document.getElementById('sbsbar');
+  const isOpen = bar.classList.toggle('open');
+  if (isOpen) {
+    sbsLayers = buildSBSLayers(currentData);
+    sbsCurrent = 0;
+    renderSBSChips();
+    sbsRender();
+  } else {
+    sbsStop();
+    // Restore full diagram
+    document.getElementById('diag-out').innerHTML = renderSVG(currentData);
+    attachNodeClickHandlers();
+  }
+}
+
+function renderSBSChips() {
+  const container = document.getElementById('sbs-layers');
+  container.innerHTML = sbsLayers.map((l, i) =>
+    `<span class="sbs-layer-chip${i === 0 ? ' active' : ''}" onclick="sbsJump(${i})">${l.label}</span>`
+  ).join('');
+}
+
+function sbsRender() {
+  if (!currentData || !sbsLayers.length) return;
+  // Collect all nodeIds and edgeIds up to current layer
+  const visibleNodes = new Set();
+  const visibleEdges = new Set();
+  for (let i = 0; i <= sbsCurrent; i++) {
+    sbsLayers[i].nodeIds.forEach(id => visibleNodes.add(id));
+    sbsLayers[i].edgeIds.forEach(idx => visibleEdges.add(idx));
+  }
+  // Render filtered data
+  const filtered = {
+    groups: currentData.groups,
+    nodes: (currentData.nodes || []).filter(n => visibleNodes.has(n.id)),
+    edges: (currentData.edges || []).filter((_, i) => visibleEdges.has(i))
+  };
+  document.getElementById('diag-out').innerHTML = renderSVG(filtered);
+  attachNodeClickHandlers();
+  // Update progress
+  const pct = sbsLayers.length > 1 ? (sbsCurrent / (sbsLayers.length - 1)) * 100 : 100;
+  document.getElementById('sbs-fill').style.width = pct + '%';
+  document.getElementById('sbs-counter').textContent = `Layer ${sbsCurrent + 1} / ${sbsLayers.length}`;
+  // Update chips
+  document.querySelectorAll('.sbs-layer-chip').forEach((c, i) => c.classList.toggle('active', i === sbsCurrent));
+  // Update buttons
+  document.getElementById('sbs-prev').disabled = sbsCurrent === 0;
+  document.getElementById('sbs-next').disabled = sbsCurrent === sbsLayers.length - 1;
+}
+
+function sbsStep(dir) {
+  sbsCurrent = Math.max(0, Math.min(sbsLayers.length - 1, sbsCurrent + dir));
+  sbsRender();
+}
+
+function sbsJump(idx) { sbsCurrent = idx; sbsRender(); }
+
+function sbsTogglePlay() {
+  sbsPlaying = !sbsPlaying;
+  const btn = document.getElementById('sbs-playbtn');
+  if (sbsPlaying) {
+    btn.textContent = '⏸ Pause';
+    sbsTimer = setInterval(() => {
+      if (sbsCurrent >= sbsLayers.length - 1) { sbsStop(); return; }
+      sbsStep(1);
+    }, 1200);
+  } else { sbsStop(); }
+}
+
+function sbsStop() {
+  sbsPlaying = false;
+  clearInterval(sbsTimer);
+  const btn = document.getElementById('sbs-playbtn');
+  if (btn) btn.textContent = '▶ Play';
+}
+
+// ═══════════════════════════════════════════════════════
+//  BLAST RADIUS VISUALIZER
+// ═══════════════════════════════════════════════════════
+let blastModeActive = false;
+
+function toggleBlastMode() {
+  blastModeActive = !blastModeActive;
+  const btn = document.getElementById('btn-blast');
+  const hint = document.getElementById('blast-hint');
+  if (blastModeActive) {
+    btn.style.borderColor = 'var(--red)';
+    btn.style.color = 'var(--red)';
+    btn.style.background = 'rgba(248,113,113,0.1)';
+    hint.style.display = 'inline-flex';
+    clearBlast();
+  } else {
+    btn.style.borderColor = '';
+    btn.style.color = '';
+    btn.style.background = '';
+    hint.style.display = 'none';
+    clearBlast();
+  }
+}
+
+function computeBlastRadius(nodeId) {
+  if (!currentData) return { affected: [], downstream: [], upstream: [] };
+  const edges = currentData.edges || [];
+  const nodes = currentData.nodes || [];
+  const nodeMap = {};
+  nodes.forEach(n => nodeMap[n.id] = n);
+
+  // BFS downstream (what this node feeds into)
+  const downstream = new Set();
+  const queue = [nodeId];
+  while (queue.length) {
+    const cur = queue.shift();
+    edges.forEach(e => {
+      if (e.from === cur && !downstream.has(e.to)) {
+        downstream.add(e.to); queue.push(e.to);
+      }
+    });
+  }
+  // BFS upstream (what feeds into this node)
+  const upstream = new Set();
+  const q2 = [nodeId];
+  while (q2.length) {
+    const cur = q2.shift();
+    edges.forEach(e => {
+      if (e.to === cur && !upstream.has(e.from)) {
+        upstream.add(e.from); q2.push(e.from);
+      }
+    });
+  }
+  downstream.delete(nodeId); upstream.delete(nodeId);
+  return { downstream: [...downstream], upstream: [...upstream], nodeMap };
+}
+
+function showBlastRadius(nodeId) {
+  const { downstream, upstream, nodeMap } = computeBlastRadius(nodeId);
+  const clickedNode = (currentData.nodes || []).find(n => n.id === nodeId);
+  const clickedLabel = (clickedNode?.label || nodeId).replace(/\n/g, ' ');
+
+  const overlay = document.getElementById('blast-overlay');
+  const content = document.getElementById('blast-content');
+
+  let html = `<div class="blast-item" style="color:var(--red);font-weight:600">⚠ ${clickedLabel} goes down</div>`;
+  if (downstream.length) {
+    html += `<div class="blast-item" style="margin-top:4px;color:var(--text3)">DOWNSTREAM IMPACT (${downstream.length})</div>`;
+    downstream.forEach(id => {
+      const n = nodeMap[id];
+      const lbl = n ? (n.label||id).replace(/\n/g,' ') : id;
+      html += `<div class="blast-item">${lbl}</div>`;
+    });
+  }
+  if (upstream.length) {
+    html += `<div class="blast-item" style="margin-top:4px;color:var(--text3)">UPSTREAM DEPS (${upstream.length})</div>`;
+    upstream.slice(0, 4).forEach(id => {
+      const n = nodeMap[id];
+      const lbl = n ? (n.label||id).replace(/\n/g,' ') : id;
+      html += `<div class="blast-item" style="opacity:0.7">${lbl}</div>`;
+    });
+    if (upstream.length > 4) html += `<div class="blast-item" style="opacity:0.5">+${upstream.length - 4} more…</div>`;
+  }
+  if (!downstream.length && !upstream.length) {
+    html += `<div class="blast-item" style="opacity:0.6">No direct dependencies found</div>`;
+  }
+  content.innerHTML = html;
+  overlay.classList.add('visible');
+
+  // Highlight affected nodes in SVG
+  highlightBlastNodes(nodeId, downstream, upstream);
+}
+
+function highlightBlastNodes(nodeId, downstream, upstream) {
+  const svg = document.querySelector('#diag-out svg');
+  if (!svg) return;
+  // Add visual overlay rects on affected nodes
+  const positions = window._lastPositions || {};
+  const NODE_W = 124, NODE_H = 64;
+  // Remove old overlays
+  svg.querySelectorAll('.blast-hl').forEach(el => el.remove());
+  const defs = svg.querySelector('defs');
+
+  const addHL = (id, color, opacity) => {
+    const p = positions[id]; if (!p) return;
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x', p.x - NODE_W/2 - 2);
+    rect.setAttribute('y', p.y - NODE_H/2 - 2);
+    rect.setAttribute('width', NODE_W + 4);
+    rect.setAttribute('height', NODE_H + 4);
+    rect.setAttribute('rx', '11');
+    rect.setAttribute('fill', 'none');
+    rect.setAttribute('stroke', color);
+    rect.setAttribute('stroke-width', '2.5');
+    rect.setAttribute('opacity', opacity);
+    rect.setAttribute('class', 'blast-hl');
+    svg.appendChild(rect);
+  };
+
+  // Clicked node — red
+  addHL(nodeId, '#f87171', '1');
+  // Downstream — amber
+  downstream.forEach(id => addHL(id, '#fbbf24', '0.85'));
+  // Upstream — blue tint
+  upstream.forEach(id => addHL(id, '#22d3ee', '0.5'));
+}
+
+function clearBlast() {
+  document.getElementById('blast-overlay').classList.remove('visible');
+  document.querySelector('#diag-out svg')?.querySelectorAll('.blast-hl').forEach(el => el.remove());
+}
+
+function attachNodeClickHandlers() {
+  // We need positions stored globally for blast highlight
+  // Nodes in SVG have rect elements — attach click via data attribute
+  if (!currentData) return;
+  const svg = document.querySelector('#diag-out svg');
+  if (!svg) return;
+  // We'll use a delegated click approach on the SVG
+  svg.style.cursor = blastModeActive ? 'crosshair' : 'default';
+  svg.onclick = null;
+  if (!blastModeActive) return;
+  svg.onclick = (e) => {
+    if (!blastModeActive) return;
+    // Find which node was clicked using stored positions
+    const positions = window._lastPositions || {};
+    const svgRect = svg.getBoundingClientRect();
+    const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+    const scaleX = vb[2] / svgRect.width;
+    const scaleY = vb[3] / svgRect.height;
+    const cx = (e.clientX - svgRect.left) * scaleX;
+    const cy = (e.clientY - svgRect.top) * scaleY;
+    const NODE_W = 124, NODE_H = 64;
+    for (const [id, p] of Object.entries(positions)) {
+      if (cx >= p.x - NODE_W/2 && cx <= p.x + NODE_W/2 &&
+          cy >= p.y - NODE_H/2 && cy <= p.y + NODE_H/2) {
+        showBlastRadius(id);
+        return;
+      }
+    }
+    clearBlast();
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+//  API KEY
+// ═══════════════════════════════════════════════════════
+function saveKey() {
+  const k = document.getElementById('apikey').value.trim();
+  if (!k) return;
+  localStorage.setItem('archlab_key', k);
+  document.getElementById('apikey').value = '••••••••••••••••';
+  showInfo('API key saved locally.');
+}
+function getKey() {
+  return localStorage.getItem('archlab_key') || '';
+}
+window.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  const stored = getKey();
+  if (stored) document.getElementById('apikey').value = '••••••••••••••••';
+  useTpl('aws3tier');
+});
+
+// ═══════════════════════════════════════════════════════
+//  MODE
+// ═══════════════════════════════════════════════════════
+function setMode(m) {
+  appMode = m;
+  document.getElementById('mode-ai').classList.toggle('active', m==='ai');
+  document.getElementById('mode-offline').classList.toggle('active', m==='offline');
+  document.getElementById('apikey-section').style.display = m==='ai' ? 'flex' : 'none';
+  document.getElementById('apikey-section').style.flexDirection = 'column';
+  document.getElementById('ai-hint').style.display = m==='ai' ? 'block' : 'none';
+  document.getElementById('offline-hint').style.display = m==='offline' ? 'block' : 'none';
+  const badge = document.getElementById('mode-badge');
+  if (m==='ai') {
+    badge.textContent='✦ AI Powered'; badge.className='badge badge-ai';
+    document.getElementById('genbtn').classList.add('ai-mode');
+    document.getElementById('btn-icon').textContent='✦';
+  } else {
+    badge.textContent='⚡ Offline'; badge.className='badge badge-offline';
+    document.getElementById('genbtn').classList.remove('ai-mode');
+    document.getElementById('btn-icon').textContent='⬡';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  QUICK PROMPTS
+// ═══════════════════════════════════════════════════════
+const QUICK_PROMPTS = {
+  'aws-3tier': 'A production 3-tier web application on AWS with Route53 DNS, CloudFront CDN, WAF, Application Load Balancer, EC2 Auto Scaling group, RDS MySQL with Multi-AZ standby, ElastiCache Redis, S3 static assets, and VPC with public and private subnets across 2 availability zones.',
+  'eks-prod': 'A production EKS cluster on AWS with Ingress NGINX, Istio service mesh, multiple microservices (API Gateway, User Service, Order Service, Payment Service), Kafka event bus, PostgreSQL and MongoDB databases, ArgoCD for GitOps, and Prometheus/Grafana monitoring.',
+  'cicd-github': 'A GitHub Actions CI/CD pipeline for a containerized microservice: developer pushes code, PR triggers unit tests and linting, Docker build and push to ECR, Trivy image security scan, SonarQube SAST, deploy to staging EKS, integration tests, manual approval gate, deploy to production EKS, health checks, Slack and PagerDuty notifications.',
+  'observability': 'A full observability stack: multiple services sending OpenTelemetry data to an OTel Collector, Prometheus for metrics, Loki for log aggregation, Jaeger for distributed tracing, Grafana unified dashboards, Alertmanager routing to PagerDuty and Slack.',
+  'zero-trust': 'A zero trust network architecture: developer and mobile devices connect through Cloudflare WAF/DDoS protection, ZTNA gateway with Okta identity provider and MFA, policy enforcement point, private services protected by Istio mTLS service mesh, HashiCorp Vault for secrets, cert-manager for TLS, and SIEM for audit logging.',
+};
+function quickPrompt(k) {
+  const txt = QUICK_PROMPTS[k];
+  if (!txt) return;
+  document.getElementById('prompt').value = txt;
+  generate();
+}
+
+// ═══════════════════════════════════════════════════════
+//  PLATFORM SELECT
+// ═══════════════════════════════════════════════════════
+function selP(btn) {
+  document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  platform = btn.dataset.p;
+}
+
+// ═══════════════════════════════════════════════════════
+//  TEMPLATES
+// ═══════════════════════════════════════════════════════
+const TEMPLATES = {
+  aws3tier:{
+    platform:'aws',title:'AWS 3-Tier Web App',
+    groups:[
+      {id:'g_internet',label:'Internet',color:'#1a2a1a'},
+      {id:'g_edge',label:'Edge / CDN Layer',color:'#1a1800'},
+      {id:'g_public',label:'Public Subnet (AZ-1a & AZ-1b)',color:'#001520'},
+      {id:'g_private',label:'Private Subnet — App Tier',color:'#0d0020'},
+      {id:'g_data',label:'Data Tier — Isolated Subnet',color:'#1a0a00'},
+    ],
+    nodes:[
+      {id:'users',label:'Users\n(Browser/Mobile)',icon:'👤',group:'g_internet'},
+      {id:'r53',label:'Route 53\nDNS',icon:'☁',color:'#ff9900',group:'g_edge'},
+      {id:'cf',label:'CloudFront\nCDN',icon:'☁',color:'#ff9900',group:'g_edge'},
+      {id:'waf',label:'WAF\n& Shield',icon:'🛡',color:'#ff9900',group:'g_edge'},
+      {id:'s3',label:'S3 Bucket\nStatic Assets',icon:'☁',color:'#ff9900',group:'g_edge'},
+      {id:'alb',label:'Application\nLoad Balancer',icon:'☁',color:'#ff9900',group:'g_public'},
+      {id:'ec2a',label:'EC2 Auto Scaling\nApp Server (AZ-a)',icon:'☁',color:'#ff9900',group:'g_private'},
+      {id:'ec2b',label:'EC2 Auto Scaling\nApp Server (AZ-b)',icon:'☁',color:'#ff9900',group:'g_private'},
+      {id:'redis',label:'ElastiCache\nRedis Cluster',icon:'⚡',color:'#ff9900',group:'g_data'},
+      {id:'rds_p',label:'RDS MySQL\nPrimary (AZ-a)',icon:'🗄',color:'#ff9900',group:'g_data'},
+      {id:'rds_s',label:'RDS MySQL\nStandby (AZ-b)',icon:'🗄',color:'#ff9900',group:'g_data'},
+    ],
+    edges:[
+      {from:'users',to:'r53',label:'DNS'},
+      {from:'r53',to:'cf',label:''},
+      {from:'cf',to:'waf',label:''},
+      {from:'cf',to:'s3',label:'static'},
+      {from:'waf',to:'alb',label:'filtered'},
+      {from:'alb',to:'ec2a',label:''},
+      {from:'alb',to:'ec2b',label:''},
+      {from:'ec2a',to:'redis',label:'cache'},
+      {from:'ec2b',to:'redis',label:'cache'},
+      {from:'ec2a',to:'rds_p',label:'SQL'},
+      {from:'ec2b',to:'rds_p',label:'SQL'},
+      {from:'rds_p',to:'rds_s',label:'replicate'},
+    ]
+  },
+  awsServerless:{
+    platform:'aws',title:'AWS Serverless API',
+    groups:[
+      {id:'g_client',label:'Client',color:'#1a2a1a'},
+      {id:'g_edge',label:'API Layer',color:'#1a1800'},
+      {id:'g_compute',label:'Compute',color:'#001520'},
+      {id:'g_data',label:'Storage & Data',color:'#1a0a00'},
+      {id:'g_async',label:'Async Processing',color:'#001a10'},
+    ],
+    nodes:[
+      {id:'client',label:'Web / Mobile\nClient',icon:'📱',group:'g_client'},
+      {id:'cognito',label:'Cognito\nUser Pool',icon:'🔐',color:'#ff9900',group:'g_edge'},
+      {id:'apigw',label:'API Gateway\nREST / HTTP',icon:'☁',color:'#ff9900',group:'g_edge'},
+      {id:'lambda_api',label:'Lambda\nAPI Handler',icon:'⚡',color:'#ff9900',group:'g_compute'},
+      {id:'lambda_proc',label:'Lambda\nProcessor',icon:'⚡',color:'#ff9900',group:'g_compute'},
+      {id:'dynamo',label:'DynamoDB\nNoSQL DB',icon:'🗄',color:'#ff9900',group:'g_data'},
+      {id:'s3',label:'S3 Bucket\nFiles & Assets',icon:'☁',color:'#ff9900',group:'g_data'},
+      {id:'sqs',label:'SQS Queue\nAsync Jobs',icon:'📨',color:'#ff9900',group:'g_async'},
+      {id:'sns',label:'SNS Topic\nNotifications',icon:'🔔',color:'#ff9900',group:'g_async'},
+      {id:'cw',label:'CloudWatch\nLogs & Metrics',icon:'📊',color:'#ff9900',group:'g_async'},
+    ],
+    edges:[
+      {from:'client',to:'cognito',label:'auth'},{from:'client',to:'apigw',label:'JWT'},
+      {from:'apigw',to:'lambda_api',label:'invoke'},{from:'lambda_api',to:'dynamo',label:'CRUD'},
+      {from:'lambda_api',to:'s3',label:'upload'},{from:'lambda_api',to:'sqs',label:'enqueue'},
+      {from:'sqs',to:'lambda_proc',label:'trigger'},{from:'lambda_proc',to:'dynamo',label:'write'},
+      {from:'lambda_proc',to:'sns',label:'notify'},{from:'lambda_api',to:'cw',label:'logs'},
+      {from:'lambda_proc',to:'cw',label:'logs'},
+    ]
+  },
+  eksCluster:{
+    platform:'k8s',title:'EKS Production Cluster',
+    groups:[
+      {id:'g_ingress',label:'Ingress Layer',color:'#00051a'},
+      {id:'g_mesh',label:'Service Mesh (Istio)',color:'#001020'},
+      {id:'g_workload',label:'Application Workloads',color:'#0d0020'},
+      {id:'g_data',label:'Data & State',color:'#1a0a00'},
+      {id:'g_ops',label:'Platform Operations',color:'#001a10'},
+    ],
+    nodes:[
+      {id:'nlb',label:'Network LB\n(AWS NLB)',icon:'☁',color:'#ff9900',group:'g_ingress'},
+      {id:'ingress',label:'Ingress Controller\n(NGINX)',icon:'⎈',color:'#326ce5',group:'g_ingress'},
+      {id:'istio',label:'Istio\nService Mesh',icon:'🔀',color:'#326ce5',group:'g_mesh'},
+      {id:'api_gw',label:'API Gateway\nService',icon:'⎈',color:'#326ce5',group:'g_workload'},
+      {id:'user_svc',label:'User\nService',icon:'⎈',color:'#326ce5',group:'g_workload'},
+      {id:'order_svc',label:'Order\nService',icon:'⎈',color:'#326ce5',group:'g_workload'},
+      {id:'payment_svc',label:'Payment\nService',icon:'⎈',color:'#326ce5',group:'g_workload'},
+      {id:'kafka',label:'Kafka\nEvent Bus',icon:'📨',color:'#326ce5',group:'g_mesh'},
+      {id:'postgres',label:'PostgreSQL\n(StatefulSet)',icon:'🗄',color:'#326ce5',group:'g_data'},
+      {id:'redis',label:'Redis\nShared Cache',icon:'⚡',color:'#326ce5',group:'g_data'},
+      {id:'argo',label:'ArgoCD\nGitOps',icon:'🔁',color:'#10b981',group:'g_ops'},
+      {id:'prometheus',label:'Prometheus\n& Grafana',icon:'📊',color:'#10b981',group:'g_ops'},
+    ],
+    edges:[
+      {from:'nlb',to:'ingress',label:''},{from:'ingress',to:'istio',label:''},
+      {from:'istio',to:'api_gw',label:''},{from:'api_gw',to:'user_svc',label:'gRPC'},
+      {from:'api_gw',to:'order_svc',label:'gRPC'},{from:'order_svc',to:'kafka',label:'events'},
+      {from:'kafka',to:'payment_svc',label:'consume'},{from:'user_svc',to:'postgres',label:''},
+      {from:'order_svc',to:'postgres',label:''},{from:'api_gw',to:'redis',label:'cache'},
+      {from:'argo',to:'api_gw',label:'deploy'},{from:'prometheus',to:'user_svc',label:'scrape'},
+      {from:'prometheus',to:'order_svc',label:'scrape'},
+    ]
+  },
+  azureAks:{
+    platform:'azure',title:'Azure AKS Microservices',
+    groups:[
+      {id:'g_edge',label:'Edge Layer',color:'#00091a'},
+      {id:'g_identity',label:'Identity & Security',color:'#0d0020'},
+      {id:'g_compute',label:'AKS Cluster',color:'#001020'},
+      {id:'g_data',label:'Managed Data Services',color:'#1a0a00'},
+      {id:'g_ops',label:'DevOps & Monitoring',color:'#001a10'},
+    ],
+    nodes:[
+      {id:'afd',label:'Azure Front Door\nGlobal LB + WAF',icon:'🔷',color:'#0078d4',group:'g_edge'},
+      {id:'apim',label:'API Management\nGateway',icon:'🔷',color:'#0078d4',group:'g_edge'},
+      {id:'aad',label:'Azure AD\nIdentity Provider',icon:'🔐',color:'#0078d4',group:'g_identity'},
+      {id:'kv',label:'Key Vault\nSecrets',icon:'🔑',color:'#0078d4',group:'g_identity'},
+      {id:'ingress',label:'Ingress Controller\n(AGIC)',icon:'⎈',color:'#0078d4',group:'g_compute'},
+      {id:'svc_a',label:'Service A\n(3 replicas)',icon:'⎈',color:'#0078d4',group:'g_compute'},
+      {id:'svc_b',label:'Service B\n(3 replicas)',icon:'⎈',color:'#0078d4',group:'g_compute'},
+      {id:'svc_c',label:'Service C\n(2 replicas)',icon:'⎈',color:'#0078d4',group:'g_compute'},
+      {id:'cosmos',label:'Cosmos DB\nNoSQL',icon:'🗄',color:'#0078d4',group:'g_data'},
+      {id:'sql',label:'Azure SQL\nManaged Instance',icon:'🗄',color:'#0078d4',group:'g_data'},
+      {id:'sbus',label:'Service Bus\nMessaging',icon:'📨',color:'#0078d4',group:'g_data'},
+      {id:'monitor',label:'Azure Monitor\n& App Insights',icon:'📊',color:'#0078d4',group:'g_ops'},
+    ],
+    edges:[
+      {from:'afd',to:'apim',label:''},{from:'apim',to:'aad',label:'auth'},
+      {from:'apim',to:'ingress',label:''},{from:'ingress',to:'svc_a',label:''},
+      {from:'ingress',to:'svc_b',label:''},{from:'svc_a',to:'cosmos',label:'read/write'},
+      {from:'svc_b',to:'sql',label:'SQL'},{from:'svc_a',to:'sbus',label:'publish'},
+      {from:'sbus',to:'svc_c',label:'subscribe'},{from:'kv',to:'svc_a',label:'secrets'},
+      {from:'kv',to:'svc_b',label:'secrets'},{from:'monitor',to:'svc_a',label:'telemetry'},
+      {from:'monitor',to:'svc_b',label:'telemetry'},
+    ]
+  },
+  gcpData:{
+    platform:'gcp',title:'GCP Data Platform',
+    groups:[
+      {id:'g_ingest',label:'Ingestion Layer',color:'#00071a'},
+      {id:'g_process',label:'Processing Layer',color:'#001020'},
+      {id:'g_store',label:'Storage Layer',color:'#1a0a00'},
+      {id:'g_serve',label:'Serving Layer',color:'#001a10'},
+      {id:'g_ops',label:'Orchestration & Security',color:'#0d0020'},
+    ],
+    nodes:[
+      {id:'sources',label:'Data Sources\n(APIs / DBs / Files)',icon:'📡',group:'g_ingest'},
+      {id:'pubsub',label:'Pub/Sub\nStreaming Ingest',icon:'📨',color:'#4285f4',group:'g_ingest'},
+      {id:'gcs_raw',label:'GCS Bucket\nRaw Zone',icon:'☁',color:'#4285f4',group:'g_ingest'},
+      {id:'dataflow',label:'Dataflow\nStream Processing',icon:'🔄',color:'#4285f4',group:'g_process'},
+      {id:'dataproc',label:'Dataproc\nBatch (Spark)',icon:'⚙',color:'#4285f4',group:'g_process'},
+      {id:'cf',label:'Cloud Functions\nEvent Processing',icon:'⚡',color:'#4285f4',group:'g_process'},
+      {id:'gcs_proc',label:'GCS Bucket\nProcessed Zone',icon:'☁',color:'#4285f4',group:'g_store'},
+      {id:'bq',label:'BigQuery\nData Warehouse',icon:'🗄',color:'#4285f4',group:'g_store'},
+      {id:'bigtable',label:'Bigtable\nTime Series',icon:'🗄',color:'#4285f4',group:'g_store'},
+      {id:'vertexai',label:'Vertex AI\nML Models',icon:'🤖',color:'#4285f4',group:'g_serve'},
+      {id:'looker',label:'Looker Studio\nDashboards',icon:'📊',color:'#4285f4',group:'g_serve'},
+      {id:'composer',label:'Cloud Composer\n(Airflow)',icon:'🎼',color:'#4285f4',group:'g_ops'},
+    ],
+    edges:[
+      {from:'sources',to:'gcs_raw',label:'batch'},{from:'sources',to:'pubsub',label:'stream'},
+      {from:'pubsub',to:'cf',label:'trigger'},{from:'pubsub',to:'dataflow',label:'stream'},
+      {from:'gcs_raw',to:'dataproc',label:'batch'},{from:'dataflow',to:'gcs_proc',label:'write'},
+      {from:'dataproc',to:'gcs_proc',label:'write'},{from:'gcs_proc',to:'bq',label:'load'},
+      {from:'cf',to:'bigtable',label:'write'},{from:'bq',to:'vertexai',label:'train'},
+      {from:'bq',to:'looker',label:'query'},{from:'vertexai',to:'looker',label:'predictions'},
+      {from:'composer',to:'dataproc',label:'orchestrate'},{from:'composer',to:'dataflow',label:'orchestrate'},
+    ]
+  },
+  githubCicd:{
+    platform:'cicd',title:'GitHub Actions CI/CD Pipeline',
+    groups:[
+      {id:'g_dev',label:'Developer',color:'#1a2a1a'},
+      {id:'g_source',label:'Source Control',color:'#1a1800'},
+      {id:'g_ci',label:'CI — Build & Test',color:'#001a10'},
+      {id:'g_sec',label:'Security Scanning',color:'#1a0000'},
+      {id:'g_staging',label:'Deploy → Staging',color:'#001020'},
+      {id:'g_prod',label:'Deploy → Production',color:'#0d0020'},
+      {id:'g_notify',label:'Notifications',color:'#1a1800'},
+    ],
+    nodes:[
+      {id:'dev',label:'Developer\nPushes Code',icon:'👤',group:'g_dev'},
+      {id:'github',label:'GitHub\nRepository',icon:'📦',color:'#10b981',group:'g_source'},
+      {id:'pr',label:'Pull Request\n& Code Review',icon:'🔍',color:'#10b981',group:'g_source'},
+      {id:'unit',label:'Unit Tests\n(Jest/Pytest)',icon:'✅',color:'#10b981',group:'g_ci'},
+      {id:'build',label:'Docker Build\n& Push to ECR',icon:'🐳',color:'#10b981',group:'g_ci'},
+      {id:'lint',label:'Lint &\nCode Quality',icon:'🔍',color:'#10b981',group:'g_ci'},
+      {id:'trivy',label:'Trivy\nImage Scan',icon:'🛡',color:'#f87171',group:'g_sec'},
+      {id:'sonar',label:'SonarQube\nSAST',icon:'🔐',color:'#f87171',group:'g_sec'},
+      {id:'stg_eks',label:'Deploy to\nStaging EKS',icon:'⎈',color:'#22d3ee',group:'g_staging'},
+      {id:'int_test',label:'Integration\nTests (E2E)',icon:'🧪',color:'#22d3ee',group:'g_staging'},
+      {id:'approval',label:'Manual Approval\nGate',icon:'✋',color:'#fbbf24',group:'g_prod'},
+      {id:'prod_eks',label:'Deploy to\nProduction EKS',icon:'⎈',color:'#326ce5',group:'g_prod'},
+      {id:'healthcheck',label:'Health Check\n& Smoke Test',icon:'💚',color:'#10b981',group:'g_prod'},
+      {id:'slack',label:'Slack\nNotification',icon:'💬',color:'#f59e0b',group:'g_notify'},
+      {id:'pd',label:'PagerDuty\nAlert (on fail)',icon:'🚨',color:'#f59e0b',group:'g_notify'},
+    ],
+    edges:[
+      {from:'dev',to:'github',label:'git push'},{from:'github',to:'pr',label:'opens PR'},
+      {from:'pr',to:'unit',label:'triggers'},{from:'pr',to:'lint',label:'triggers'},
+      {from:'unit',to:'build',label:'pass'},{from:'lint',to:'build',label:'pass'},
+      {from:'build',to:'trivy',label:'scan image'},{from:'build',to:'sonar',label:'SAST'},
+      {from:'trivy',to:'stg_eks',label:'pass'},{from:'sonar',to:'stg_eks',label:'pass'},
+      {from:'stg_eks',to:'int_test',label:''},{from:'int_test',to:'approval',label:'pass'},
+      {from:'approval',to:'prod_eks',label:'approved'},{from:'prod_eks',to:'healthcheck',label:''},
+      {from:'healthcheck',to:'slack',label:'success'},{from:'healthcheck',to:'pd',label:'fail'},
+    ]
+  },
+  terraformAws:{
+    platform:'tf',title:'Terraform AWS IaC Resource Graph',
+    groups:[
+      {id:'g_root',label:'Root Module',color:'#0e0018'},
+      {id:'g_vpc',label:'Module: vpc',color:'#001020'},
+      {id:'g_eks',label:'Module: eks',color:'#00051a'},
+      {id:'g_rds',label:'Module: rds',color:'#1a0a00'},
+      {id:'g_s3',label:'Module: s3',color:'#1a1800'},
+      {id:'g_backend',label:'Remote State Backend',color:'#1a0818'},
+    ],
+    nodes:[
+      {id:'main_tf',label:'main.tf\n(root)',icon:'🏗',color:'#7b42f6',group:'g_root'},
+      {id:'vars',label:'variables.tf\n& tfvars',icon:'📄',color:'#7b42f6',group:'g_root'},
+      {id:'outputs',label:'outputs.tf',icon:'📤',color:'#7b42f6',group:'g_root'},
+      {id:'vpc_mod',label:'aws_vpc\nresource',icon:'🌐',color:'#7b42f6',group:'g_vpc'},
+      {id:'subnets',label:'aws_subnet\n(public×2, private×2)',icon:'🌐',color:'#7b42f6',group:'g_vpc'},
+      {id:'igw',label:'aws_internet_gateway',icon:'🌐',color:'#7b42f6',group:'g_vpc'},
+      {id:'nat',label:'aws_nat_gateway',icon:'🌐',color:'#7b42f6',group:'g_vpc'},
+      {id:'eks_cluster',label:'aws_eks_cluster',icon:'⎈',color:'#7b42f6',group:'g_eks'},
+      {id:'node_grp',label:'aws_eks_node_group\n(managed)',icon:'⎈',color:'#7b42f6',group:'g_eks'},
+      {id:'eks_iam',label:'aws_iam_role\n& policies',icon:'🔐',color:'#7b42f6',group:'g_eks'},
+      {id:'rds_inst',label:'aws_db_instance\n(MySQL)',icon:'🗄',color:'#7b42f6',group:'g_rds'},
+      {id:'rds_sub',label:'aws_db_subnet_group',icon:'🗄',color:'#7b42f6',group:'g_rds'},
+      {id:'rds_sg',label:'aws_security_group\n(rds-sg)',icon:'🛡',color:'#7b42f6',group:'g_rds'},
+      {id:'s3_bucket',label:'aws_s3_bucket',icon:'☁',color:'#7b42f6',group:'g_s3'},
+      {id:'s3_policy',label:'aws_s3_bucket_policy\n& versioning',icon:'📄',color:'#7b42f6',group:'g_s3'},
+      {id:'tfstate_s3',label:'S3 Bucket\nterraform.tfstate',icon:'☁',color:'#a78bfa',group:'g_backend'},
+      {id:'tflock_ddb',label:'DynamoDB Table\nState Lock',icon:'🔒',color:'#a78bfa',group:'g_backend'},
+    ],
+    edges:[
+      {from:'main_tf',to:'vpc_mod',label:'module'},{from:'main_tf',to:'eks_cluster',label:'module'},
+      {from:'main_tf',to:'rds_inst',label:'module'},{from:'main_tf',to:'s3_bucket',label:'module'},
+      {from:'vars',to:'main_tf',label:'input'},{from:'main_tf',to:'outputs',label:'export'},
+      {from:'vpc_mod',to:'subnets',label:'depends'},{from:'subnets',to:'igw',label:'depends'},
+      {from:'subnets',to:'nat',label:'depends'},
+      {from:'subnets',to:'eks_cluster',label:'subnet_ids'},{from:'eks_iam',to:'eks_cluster',label:'role_arn'},
+      {from:'eks_cluster',to:'node_grp',label:'depends'},{from:'subnets',to:'rds_sub',label:'subnet_ids'},
+      {from:'rds_sg',to:'rds_inst',label:'vpc_sg'},{from:'rds_sub',to:'rds_inst',label:'depends'},
+      {from:'s3_bucket',to:'s3_policy',label:'depends'},
+      {from:'main_tf',to:'tfstate_s3',label:'backend'},{from:'main_tf',to:'tflock_ddb',label:'lock'},
+    ]
+  },
+  dockerCompose:{
+    platform:'docker',title:'Docker Compose Full Stack',
+    groups:[
+      {id:'g_proxy',label:'Proxy Layer (frontend-net)',color:'#001520'},
+      {id:'g_app',label:'Application Layer (app-net)',color:'#001020'},
+      {id:'g_data',label:'Data Layer (data-net)',color:'#1a0a00'},
+      {id:'g_mon',label:'Monitoring (monitor-net)',color:'#001a10'},
+      {id:'g_vol',label:'Named Volumes',color:'#1a1800'},
+    ],
+    nodes:[
+      {id:'nginx',label:'Nginx\n:80/:443',icon:'🌐',color:'#2496ed',group:'g_proxy'},
+      {id:'frontend',label:'React Frontend\n:3000',icon:'⚛',color:'#2496ed',group:'g_proxy'},
+      {id:'api',label:'Node.js API\n:4000',icon:'🟢',color:'#2496ed',group:'g_app'},
+      {id:'worker',label:'Background\nWorker',icon:'⚙',color:'#2496ed',group:'g_app'},
+      {id:'postgres',label:'PostgreSQL\n:5432',icon:'🗄',color:'#2496ed',group:'g_data'},
+      {id:'redis',label:'Redis Cache\n:6379',icon:'⚡',color:'#2496ed',group:'g_data'},
+      {id:'rabbitmq',label:'RabbitMQ\n:5672',icon:'🐰',color:'#2496ed',group:'g_data'},
+      {id:'prometheus',label:'Prometheus\n:9090',icon:'📊',color:'#10b981',group:'g_mon'},
+      {id:'grafana',label:'Grafana\n:3001',icon:'📈',color:'#10b981',group:'g_mon'},
+      {id:'vol_pg',label:'postgres_data\n(volume)',icon:'💾',color:'#565d75',group:'g_vol'},
+      {id:'vol_redis',label:'redis_data\n(volume)',icon:'💾',color:'#565d75',group:'g_vol'},
+    ],
+    edges:[
+      {from:'nginx',to:'frontend',label:'proxy'},{from:'nginx',to:'api',label:'proxy /api'},
+      {from:'frontend',to:'api',label:'REST/WS'},{from:'api',to:'postgres',label:'pg driver'},
+      {from:'api',to:'redis',label:'cache'},{from:'api',to:'rabbitmq',label:'publish'},
+      {from:'rabbitmq',to:'worker',label:'consume'},{from:'worker',to:'postgres',label:'write'},
+      {from:'prometheus',to:'api',label:'scrape :4000'},{from:'prometheus',to:'postgres',label:'scrape'},
+      {from:'grafana',to:'prometheus',label:'datasource'},{from:'postgres',to:'vol_pg',label:'mount'},
+      {from:'redis',to:'vol_redis',label:'mount'},
+    ]
+  },
+  observability:{
+    platform:'obs',title:'Full Observability Stack',
+    groups:[
+      {id:'g_apps',label:'Applications',color:'#1a2a1a'},
+      {id:'g_collect',label:'Collection Layer',color:'#001520'},
+      {id:'g_metrics',label:'Metrics',color:'#001a10'},
+      {id:'g_logs',label:'Logs',color:'#1a0a00'},
+      {id:'g_traces',label:'Traces',color:'#0d0020'},
+      {id:'g_viz',label:'Visualization',color:'#001020'},
+      {id:'g_alert',label:'Alerting',color:'#1a0000'},
+    ],
+    nodes:[
+      {id:'app1',label:'Service A\n(Node.js)',icon:'🟢',group:'g_apps'},
+      {id:'app2',label:'Service B\n(Python)',icon:'🐍',group:'g_apps'},
+      {id:'app3',label:'Service C\n(Java)',icon:'☕',group:'g_apps'},
+      {id:'otel',label:'OpenTelemetry\nCollector',icon:'📡',color:'#06b6d4',group:'g_collect'},
+      {id:'prometheus',label:'Prometheus\nMetrics DB',icon:'📊',color:'#06b6d4',group:'g_metrics'},
+      {id:'node_exp',label:'Node Exporter\nHost Metrics',icon:'💻',color:'#06b6d4',group:'g_metrics'},
+      {id:'loki',label:'Loki\nLog Aggregation',icon:'📋',color:'#06b6d4',group:'g_logs'},
+      {id:'logagent',label:'Promtail\nLog Agent',icon:'📝',color:'#06b6d4',group:'g_logs'},
+      {id:'jaeger',label:'Jaeger\nDistributed Tracing',icon:'🔍',color:'#06b6d4',group:'g_traces'},
+      {id:'grafana',label:'Grafana\nUnified Dashboard',icon:'📈',color:'#06b6d4',group:'g_viz'},
+      {id:'alertmgr',label:'Alertmanager\nRouting Rules',icon:'🚨',color:'#f87171',group:'g_alert'},
+      {id:'pagerduty',label:'PagerDuty\nOn-call',icon:'📟',color:'#f87171',group:'g_alert'},
+      {id:'slack',label:'Slack\nAlerts Channel',icon:'💬',color:'#f87171',group:'g_alert'},
+    ],
+    edges:[
+      {from:'app1',to:'otel',label:'OTLP'},{from:'app2',to:'otel',label:'OTLP'},{from:'app3',to:'otel',label:'OTLP'},
+      {from:'otel',to:'prometheus',label:'metrics'},{from:'otel',to:'loki',label:'logs'},{from:'otel',to:'jaeger',label:'traces'},
+      {from:'node_exp',to:'prometheus',label:'scrape'},{from:'logagent',to:'loki',label:'push'},
+      {from:'prometheus',to:'grafana',label:'datasource'},{from:'loki',to:'grafana',label:'datasource'},
+      {from:'jaeger',to:'grafana',label:'datasource'},{from:'prometheus',to:'alertmgr',label:'fire alert'},
+      {from:'alertmgr',to:'pagerduty',label:'critical'},{from:'alertmgr',to:'slack',label:'warning'},
+    ]
+  },
+  zeroTrust:{
+    platform:'net',title:'Zero Trust Network Architecture',
+    groups:[
+      {id:'g_users',label:'Users & Devices',color:'#1a2a1a'},
+      {id:'g_identity',label:'Identity & Access',color:'#0d0020'},
+      {id:'g_ztna',label:'Zero Trust Layer',color:'#001a10'},
+      {id:'g_internal',label:'Internal Services (VPC)',color:'#001020'},
+      {id:'g_secrets',label:'Secrets & PKI',color:'#1a0000'},
+      {id:'g_siem',label:'SIEM & Audit',color:'#1a1800'},
+    ],
+    nodes:[
+      {id:'dev',label:'Developer\nLaptop',icon:'💻',group:'g_users'},
+      {id:'mobile',label:'Mobile\nDevice',icon:'📱',group:'g_users'},
+      {id:'cf',label:'Cloudflare\nDDoS / WAF',icon:'🛡',color:'#f59e0b',group:'g_ztna'},
+      {id:'okta',label:'Okta\nIdentity Provider',icon:'🔐',color:'#a78bfa',group:'g_identity'},
+      {id:'mfa',label:'MFA\n(TOTP/WebAuthn)',icon:'🔑',color:'#a78bfa',group:'g_identity'},
+      {id:'ztna_gw',label:'ZTNA Gateway\n(Cloudflare Access)',icon:'🛡',color:'#f59e0b',group:'g_ztna'},
+      {id:'pep',label:'Policy Enforcement\nPoint',icon:'⚖',color:'#f59e0b',group:'g_ztna'},
+      {id:'svc_a',label:'Service A\nPrivate Subnet',icon:'🔷',color:'#0078d4',group:'g_internal'},
+      {id:'svc_b',label:'Service B\nPrivate Subnet',icon:'🔷',color:'#0078d4',group:'g_internal'},
+      {id:'mtls',label:'mTLS\nService Mesh (Istio)',icon:'🔒',color:'#0078d4',group:'g_internal'},
+      {id:'vault',label:'HashiCorp Vault\nSecrets & PKI',icon:'🔐',color:'#f87171',group:'g_secrets'},
+      {id:'certmgr',label:'cert-manager\nTLS Rotation',icon:'📜',color:'#f87171',group:'g_secrets'},
+      {id:'siem',label:'SIEM\n(Splunk/Elastic)',icon:'📊',color:'#fbbf24',group:'g_siem'},
+      {id:'audit',label:'Audit Logs\n& Compliance',icon:'📋',color:'#fbbf24',group:'g_siem'},
+    ],
+    edges:[
+      {from:'dev',to:'cf',label:'HTTPS'},{from:'mobile',to:'cf',label:'HTTPS'},
+      {from:'cf',to:'ztna_gw',label:'filtered'},{from:'ztna_gw',to:'okta',label:'verify identity'},
+      {from:'okta',to:'mfa',label:'challenge'},{from:'mfa',to:'okta',label:'verified'},
+      {from:'okta',to:'pep',label:'token'},{from:'pep',to:'svc_a',label:'allow'},
+      {from:'pep',to:'svc_b',label:'allow'},{from:'svc_a',to:'mtls',label:'mesh'},
+      {from:'svc_b',to:'mtls',label:'mesh'},{from:'vault',to:'svc_a',label:'secrets'},
+      {from:'vault',to:'svc_b',label:'secrets'},{from:'certmgr',to:'mtls',label:'certs'},
+      {from:'pep',to:'siem',label:'access log'},{from:'cf',to:'siem',label:'waf log'},{from:'siem',to:'audit',label:''},
+    ]
+  },
+  awsVpc:{
+    platform:'aws',title:'AWS VPC Architecture',
+    groups:[
+      {id:'g_internet',label:'Internet',color:'#1a2a1a'},
+      {id:'g_az1',label:'Availability Zone us-east-1a',color:'#001520'},
+      {id:'g_az2',label:'Availability Zone us-east-1b',color:'#0d0020'},
+      {id:'g_shared',label:'Shared Resources',color:'#1a1800'},
+    ],
+    nodes:[
+      {id:'igw',label:'Internet\nGateway',icon:'🌐',color:'#ff9900',group:'g_internet'},
+      {id:'user',label:'Internet\nUsers',icon:'👤',group:'g_internet'},
+      {id:'onprem',label:'On-Premises\nDatacenter',icon:'🏢',group:'g_internet'},
+      {id:'pub1',label:'Public Subnet\n10.0.1.0/24',icon:'🌐',color:'#ff9900',group:'g_az1'},
+      {id:'pri1',label:'Private Subnet\n10.0.3.0/24',icon:'🔒',color:'#ff9900',group:'g_az1'},
+      {id:'data1',label:'DB Subnet\n10.0.5.0/24',icon:'🗄',color:'#ff9900',group:'g_az1'},
+      {id:'pub2',label:'Public Subnet\n10.0.2.0/24',icon:'🌐',color:'#ff9900',group:'g_az2'},
+      {id:'pri2',label:'Private Subnet\n10.0.4.0/24',icon:'🔒',color:'#ff9900',group:'g_az2'},
+      {id:'data2',label:'DB Subnet\n10.0.6.0/24',icon:'🗄',color:'#ff9900',group:'g_az2'},
+      {id:'alb',label:'ALB\nLoad Balancer',icon:'☁',color:'#ff9900',group:'g_shared'},
+      {id:'nat',label:'NAT Gateway\n(Elastic IP)',icon:'☁',color:'#ff9900',group:'g_shared'},
+      {id:'tgw',label:'Transit Gateway\n(VPC Peering)',icon:'🔗',color:'#ff9900',group:'g_shared'},
+      {id:'vpn',label:'Site-to-Site\nVPN',icon:'🔐',color:'#ff9900',group:'g_shared'},
+    ],
+    edges:[
+      {from:'user',to:'igw',label:'HTTP/S'},{from:'igw',to:'alb',label:''},{from:'alb',to:'pub1',label:''},{from:'alb',to:'pub2',label:''},
+      {from:'pub1',to:'pri1',label:'app traffic'},{from:'pub2',to:'pri2',label:'app traffic'},
+      {from:'pri1',to:'data1',label:'SQL'},{from:'pri2',to:'data2',label:'SQL'},
+      {from:'pri1',to:'nat',label:'egress'},{from:'pri2',to:'nat',label:'egress'},
+      {from:'nat',to:'igw',label:'outbound'},{from:'tgw',to:'vpn',label:''},{from:'vpn',to:'onprem',label:'IPSec'},
+    ]
+  },
+  k8sMicroservices:{
+    platform:'k8s',title:'Kubernetes Microservices',
+    groups:[
+      {id:'g_ingress',label:'Ingress Layer',color:'#00051a'},
+      {id:'g_svc',label:'Service Mesh',color:'#001020'},
+      {id:'g_micro',label:'Microservices',color:'#0d0020'},
+      {id:'g_data',label:'Data Stores',color:'#1a0a00'},
+      {id:'g_infra',label:'Infrastructure',color:'#001a10'},
+    ],
+    nodes:[
+      {id:'inet',label:'External\nTraffic',icon:'🌐',group:'g_ingress'},
+      {id:'ingress',label:'Ingress\n(NGINX)',icon:'⎈',color:'#326ce5',group:'g_ingress'},
+      {id:'istio',label:'Istio\nService Mesh',icon:'🔀',color:'#326ce5',group:'g_svc'},
+      {id:'kafka',label:'Kafka\nEvent Bus',icon:'📨',color:'#326ce5',group:'g_svc'},
+      {id:'api_gw',label:'API Gateway\nService',icon:'⎈',color:'#326ce5',group:'g_micro'},
+      {id:'user_svc',label:'User\nService',icon:'⎈',color:'#326ce5',group:'g_micro'},
+      {id:'product_svc',label:'Product\nService',icon:'⎈',color:'#326ce5',group:'g_micro'},
+      {id:'order_svc',label:'Order\nService',icon:'⎈',color:'#326ce5',group:'g_micro'},
+      {id:'payment_svc',label:'Payment\nService',icon:'⎈',color:'#326ce5',group:'g_micro'},
+      {id:'userdb',label:'User DB\n(PostgreSQL)',icon:'🗄',color:'#326ce5',group:'g_data'},
+      {id:'productdb',label:'Product DB\n(MongoDB)',icon:'🗄',color:'#326ce5',group:'g_data'},
+      {id:'orderdb',label:'Order DB\n(PostgreSQL)',icon:'🗄',color:'#326ce5',group:'g_data'},
+      {id:'redis',label:'Redis\nShared Cache',icon:'⚡',color:'#326ce5',group:'g_data'},
+      {id:'argo',label:'ArgoCD',icon:'🔁',color:'#10b981',group:'g_infra'},
+      {id:'prometheus',label:'Prometheus\n& Grafana',icon:'📊',color:'#10b981',group:'g_infra'},
+    ],
+    edges:[
+      {from:'inet',to:'ingress',label:''},{from:'ingress',to:'istio',label:''},{from:'istio',to:'api_gw',label:''},
+      {from:'api_gw',to:'user_svc',label:'gRPC'},{from:'api_gw',to:'product_svc',label:'gRPC'},{from:'api_gw',to:'order_svc',label:'gRPC'},
+      {from:'order_svc',to:'kafka',label:'events'},{from:'kafka',to:'payment_svc',label:'consume'},
+      {from:'user_svc',to:'userdb',label:''},{from:'product_svc',to:'productdb',label:''},{from:'order_svc',to:'orderdb',label:''},
+      {from:'api_gw',to:'redis',label:'cache'},{from:'argo',to:'api_gw',label:'deploy'},
+      {from:'prometheus',to:'user_svc',label:'scrape'},{from:'prometheus',to:'order_svc',label:'scrape'},
+    ]
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+//  LOAD TEMPLATE
+// ═══════════════════════════════════════════════════════
+function useTpl(key) {
+  const t = TEMPLATES[key];
+  if (!t) return;
+  const pb = document.querySelector(`[data-p="${t.platform}"]`);
+  if (pb) selP(pb);
+  document.getElementById('prompt').value = t.title;
+  currentTitle = t.title;
+  renderData(t, t.title, 'TEMPLATE');
+}
+
+// ═══════════════════════════════════════════════════════
+//  AI GENERATION
+// ═══════════════════════════════════════════════════════
+const AI_SYSTEM = `You are an expert cloud architecture diagram generator. 
+Given a description of a software architecture, return ONLY a valid JSON object (no markdown, no explanation) with this exact structure:
+
+{
+  "title": "Diagram Title",
+  "groups": [
+    {"id": "g_1", "label": "Group Name", "color": "#hexcolor"}
+  ],
+  "nodes": [
+    {"id": "n_1", "label": "Node Name\\nSubtitle", "icon": "emoji", "color": "#hexcolor", "group": "g_1"}
+  ],
+  "edges": [
+    {"from": "n_1", "to": "n_2", "label": "connection type"}
+  ]
+}
+
+Rules:
+- Use real cloud service names and icons appropriate to the platform
+- Group nodes logically by tier/zone/responsibility
+- Colors: AWS=#ff9900, Azure=#0078d4, GCP=#4285f4, K8s=#326ce5, CI/CD=#10b981, Terraform=#7b42f6, Docker=#2496ed, Security=#f87171, Monitoring=#06b6d4
+- Group colors: dark hex like #1a0a00, #001520, #0d0020 (dark tinted backgrounds)
+- Emoji icons: ☁🗄⎈🌐🔐💾📊🔀📨⚡🛡🐳🔁🏗👤📦✅🧪🔍🔔⚙🎼🤖📡🔒🔑📋📝📈🚨📟💬🖥🔷🐍☕🟢⚛🐰
+- Node labels use \\n for line break (service name on first line, subtype on second)
+- Include 3-8 groups, 8-20 nodes, appropriate edges with meaningful labels
+- Edge labels: empty string "" for unlabeled, or short verb like "HTTP", "gRPC", "SQL", "cache", "events", "deploy", "monitor", etc.
+- All IDs must be unique, no spaces in IDs
+- Return ONLY the JSON object, nothing else`;
+
+async function generateWithAI(prompt) {
+  const key = getKey();
+  if (!key || key.startsWith('••')) {
+    // Try to get from input field directly
+    const inputVal = document.getElementById('apikey').value.trim();
+    if (!inputVal || inputVal.startsWith('••')) {
+      throw new Error('Please enter your Anthropic API key to use AI Mode, or switch to Offline Mode.');
+    }
+  }
+
+  const actualKey = (getKey() && !getKey().startsWith('••')) ? getKey() : document.getElementById('apikey').value.trim();
+
+  const platNames = {aws:'AWS',azure:'Azure',gcp:'GCP',k8s:'Kubernetes',cicd:'CI/CD',tf:'Terraform',docker:'Docker',net:'Network/Security',obs:'Observability'};
+  const platCtx = `Platform context: ${platNames[platform]||'Cloud'}.`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': actualKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4000,
+      system: AI_SYSTEM,
+      messages: [{ role: 'user', content: `${platCtx}\n\nArchitecture to diagram:\n${prompt}` }]
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(()=>({}));
+    throw new Error(err.error?.message || `API error ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.content?.[0]?.text || '';
+  // Strip any markdown fences
+  const clean = text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+  return JSON.parse(clean);
+}
+
+// ═══════════════════════════════════════════════════════
+//  OFFLINE FALLBACK
+// ═══════════════════════════════════════════════════════
+const TOKEN_MAPS = {
+  aws:{
+    'ec2':{label:'EC2\nInstance',icon:'☁',color:'#ff9900'},'s3':{label:'S3\nBucket',icon:'☁',color:'#ff9900'},
+    'rds':{label:'RDS\nDatabase',icon:'🗄',color:'#ff9900'},'lambda':{label:'Lambda\nFunction',icon:'⚡',color:'#ff9900'},
+    'cloudfront':{label:'CloudFront\nCDN',icon:'☁',color:'#ff9900'},'alb':{label:'Application\nLoad Balancer',icon:'☁',color:'#ff9900'},
+    'route53':{label:'Route 53\nDNS',icon:'☁',color:'#ff9900'},'eks':{label:'EKS\nCluster',icon:'⎈',color:'#ff9900'},
+    'redis':{label:'ElastiCache\nRedis',icon:'⚡',color:'#ff9900'},'sqs':{label:'SQS\nQueue',icon:'📨',color:'#ff9900'},
+    'sns':{label:'SNS\nTopics',icon:'🔔',color:'#ff9900'},'waf':{label:'WAF\n& Shield',icon:'🛡',color:'#ff9900'},
+    'api gateway':{label:'API Gateway',icon:'☁',color:'#ff9900'},'cloudwatch':{label:'CloudWatch\nMonitoring',icon:'📊',color:'#ff9900'},
+    'fargate':{label:'Fargate\nServerless',icon:'⚡',color:'#ff9900'},'aurora':{label:'Aurora\nDB',icon:'🗄',color:'#ff9900'},
+    'cognito':{label:'Cognito\nAuth',icon:'🔐',color:'#ff9900'},
+  },
+  azure:{
+    'aks':{label:'AKS\nCluster',icon:'⎈',color:'#0078d4'},'blob':{label:'Blob\nStorage',icon:'☁',color:'#0078d4'},
+    'cosmos':{label:'Cosmos DB\nNoSQL',icon:'🗄',color:'#0078d4'},'apim':{label:'API Management',icon:'🔷',color:'#0078d4'},
+    'service bus':{label:'Service Bus\nMessaging',icon:'📨',color:'#0078d4'},'key vault':{label:'Key Vault\nSecrets',icon:'🔑',color:'#0078d4'},
+  },
+  gcp:{
+    'gke':{label:'GKE\nCluster',icon:'⎈',color:'#4285f4'},'cloud run':{label:'Cloud Run\nServerless',icon:'⚡',color:'#4285f4'},
+    'bigquery':{label:'BigQuery\nDW',icon:'🗄',color:'#4285f4'},'pubsub':{label:'Pub/Sub\nMessaging',icon:'📨',color:'#4285f4'},
+    'dataflow':{label:'Dataflow\nPipeline',icon:'🔄',color:'#4285f4'},'vertex':{label:'Vertex AI\nML',icon:'🤖',color:'#4285f4'},
+  },
+  k8s:{
+    'pod':{label:'Pod',icon:'⎈',color:'#326ce5'},'deployment':{label:'Deployment',icon:'⎈',color:'#326ce5'},
+    'service':{label:'Service\nClusterIP',icon:'⎈',color:'#326ce5'},'ingress':{label:'Ingress\nController',icon:'⎈',color:'#326ce5'},
+    'configmap':{label:'ConfigMap',icon:'🔑',color:'#326ce5'},'secret':{label:'Secret',icon:'🔑',color:'#326ce5'},
+    'statefulset':{label:'StatefulSet',icon:'⎈',color:'#326ce5'},'daemonset':{label:'DaemonSet',icon:'⎈',color:'#326ce5'},
+  }
+};
+
+function parseOffline(text, plat) {
+  const lower = text.toLowerCase();
+  const allTokens = Object.assign({}, ...Object.values(TOKEN_MAPS));
+  const matched = [];
+  const used = new Set();
+  for (const [key, val] of Object.entries(allTokens)) {
+    if (lower.includes(key) && !used.has(key)) {
+      used.add(key);
+      matched.push({ id:'n_'+key.replace(/\s+/g,'_'), ...val });
+    }
+  }
+  const generic = ['users','nginx','postgres','mongodb','mysql','kafka','rabbitmq','prometheus','grafana','jaeger','loki','argocd','vault','istio','traefik','jenkins','github','gitlab','sonarqube','trivy','slack','pagerduty','datadog','splunk'];
+  for (const g of generic) {
+    if (lower.includes(g) && !used.has(g)) {
+      used.add(g);
+      matched.push({id:'n_'+g, label:g.charAt(0).toUpperCase()+g.slice(1), icon:'⬡', color:'#565d75'});
+    }
+  }
+  if (matched.length < 3) return TEMPLATES[plat+'3tier'] || TEMPLATES['aws3tier'];
+  const edges = [];
+  for (let i=0; i<matched.length-1; i++) edges.push({from:matched[i].id, to:matched[i+1].id, label:''});
+  if (matched.length > 4) edges.push({from:matched[0].id, to:matched[matched.length-1].id, label:'monitor'});
+  return { title:'Custom Architecture', groups:[], nodes:matched, edges };
+}
+
+// ═══════════════════════════════════════════════════════
+//  GENERATE ENTRY POINT
+// ═══════════════════════════════════════════════════════
+async function generate() {
+  const txt = document.getElementById('prompt').value.trim();
+  if (!txt) { showErr('Please describe your architecture or select a template.'); return; }
+  hideErr();
+  showLoading();
+
+  if (appMode === 'offline') {
+    // Simulate + use offline parser
+    await delay(1600);
+    let data = null;
+    const lower = txt.toLowerCase();
+    for (const [key, tpl] of Object.entries(TEMPLATES)) {
+      if (lower.includes(tpl.title.toLowerCase()) || lower.includes(key.toLowerCase())) {
+        data = tpl; currentTitle = tpl.title; break;
+      }
+    }
+    if (!data) { data = parseOffline(txt, platform); currentTitle = data.title || 'Custom Architecture'; }
+    stepsDone();
+    renderData(data, currentTitle, 'OFFLINE');
+    return;
+  }
+
+  // AI Mode
+  try {
+    animateSteps();
+    const data = await generateWithAI(txt);
+    data.title = data.title || 'Architecture Diagram';
+    currentTitle = data.title;
+    stepsDone();
+    renderData(data, currentTitle, 'AI GENERATED');
+  } catch (err) {
+    hideLoading();
+    showErr('AI Error: ' + err.message + (err.message.includes('API key') ? '' : '\n\nTip: Check your API key or switch to Offline Mode.'));
+  }
+}
+
+function delay(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// ═══════════════════════════════════════════════════════
+//  RENDERING
+// ═══════════════════════════════════════════════════════
+function renderData(data, title, method) {
+  currentData = data;
+  const svgStr = renderSVG(data);
+  const dsl = generateDSL(data, title, platform);
+  document.getElementById('diag-out').innerHTML = svgStr;
+  document.getElementById('code-out').textContent = dsl;
+  document.getElementById('diag-title').innerHTML = `<span>// </span>${title}`;
+  document.getElementById('arch-title-display').textContent = title;
+  document.getElementById('gen-method-tag').textContent = method || 'GENERATED';
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('diag-wrap').style.display = 'block';
+  ['btn-svg','btn-png','btn-copy','btn-sbs','btn-blast'].forEach(id=>{ document.getElementById(id).disabled = false; });
+  // Reset step-by-step if open
+  if (document.getElementById('sbsbar').classList.contains('open')) {
+    sbsLayers = buildSBSLayers(data);
+    sbsCurrent = 0;
+    renderSBSChips();
+    sbsRender();
+  }
+  // Re-attach blast handlers
+  attachNodeClickHandlers();
+}
+
+function clearCanvas() {
+  document.getElementById('prompt').value = '';
+  document.getElementById('diag-wrap').style.display = 'none';
+  document.getElementById('empty').style.display = 'flex';
+  document.getElementById('diag-title').innerHTML = '// select a template or describe your architecture';
+  ['btn-svg','btn-png','btn-copy','btn-sbs','btn-blast'].forEach(id=>{ document.getElementById(id).disabled = true; });
+  // Close SBS panel if open
+  document.getElementById('sbsbar').classList.remove('open');
+  sbsStop();
+  // Reset blast
+  if (blastModeActive) toggleBlastMode();
+  hideErr();
+}
+
+// ═══════════════════════════════════════════════════════
+//  LOADING STATES
+// ═══════════════════════════════════════════════════════
+let stepInterval = null;
+function showLoading() {
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('diag-wrap').style.display = 'none';
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('genbtn').disabled = true;
+  document.getElementById('btn-txt').textContent = appMode==='ai' ? 'Generating with AI…' : 'Generating…';
+  ['s1','s2','s3','s4'].forEach(id=>{ const el=document.getElementById(id); el.classList.remove('vis','done'); });
+}
+function animateSteps() {
+  const steps = ['s1','s2','s3','s4'];
+  let i = 0;
+  stepInterval = setInterval(()=>{ if(i<steps.length){document.getElementById(steps[i]).classList.add('vis');i++;}else clearInterval(stepInterval); },500);
+}
+function stepsDone() {
+  if (stepInterval) clearInterval(stepInterval);
+  ['s1','s2','s3','s4'].forEach(id=>{ const el=document.getElementById(id); el.classList.add('vis','done'); });
+  document.getElementById('genbtn').disabled = false;
+  document.getElementById('btn-txt').textContent = 'Generate Diagram';
+}
+function hideLoading() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('genbtn').disabled = false;
+  document.getElementById('btn-txt').textContent = 'Generate Diagram';
+  document.getElementById('empty').style.display = 'flex';
+}
+
+// ═══════════════════════════════════════════════════════
+//  SVG RENDERER
+// ═══════════════════════════════════════════════════════
+const NODE_W=124, NODE_H=64, PAD_X=52, PAD_Y=62;
+const GROUP_PAD=22, GROUP_HEADER=22;
+
+function layoutNodes(nodes, groups) {
+  const groupMap = {};
+  groups.forEach(g=>{ groupMap[g.id]=[]; });
+  const ungrouped = [];
+  nodes.forEach(n=>{ if(n.group && groupMap[n.group]!==undefined) groupMap[n.group].push(n); else ungrouped.push(n); });
+  const positions = {}, groupRects = {};
+  const COLS = 3;
+  let gx=GROUP_PAD, gy=GROUP_PAD;
+  groups.forEach(g=>{
+    const gn = groupMap[g.id];
+    if (!gn.length) return;
+    const cols=Math.min(gn.length,COLS), rows=Math.ceil(gn.length/cols);
+    const gw=cols*(NODE_W+PAD_X)+GROUP_PAD*1.5;
+    const gh=rows*(NODE_H+PAD_Y)+GROUP_PAD+GROUP_HEADER;
+    groupRects[g.id]={x:gx,y:gy,w:gw,h:gh};
+    gn.forEach((n,i)=>{
+      positions[n.id]={
+        x:gx+GROUP_PAD+((i%cols))*(NODE_W+PAD_X)+NODE_W/2,
+        y:gy+GROUP_HEADER+GROUP_PAD+Math.floor(i/cols)*(NODE_H+PAD_Y)+NODE_H/2
+      };
+    });
+    gy+=gh+GROUP_PAD;
+    if(gy>1000){gy=GROUP_PAD;gx+=580;}
+  });
+  ungrouped.forEach((n,i)=>{
+    positions[n.id]={x:gx+80+i*(NODE_W+PAD_X), y:gy+NODE_H};
+  });
+  return {positions, groupRects};
+}
+
+function renderSVG(data) {
+  const {nodes,edges,groups} = data;
+  const {positions,groupRects} = layoutNodes(nodes, groups||[]);
+
+  // Store positions globally for blast radius hit-testing
+  window._lastPositions = positions;
+
+  // Theme-aware colors
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const C = {
+    bg:        isLight ? '#ffffff' : '#0f1117',
+    node:      isLight ? '#f8faff' : '#1c2235',
+    nodeShadow:isLight ? 'rgba(0,0,0,0.08)' : '#000000',
+    text1:     isLight ? '#1a1f35' : '#e4e8f4',
+    text2:     isLight ? '#4a5570' : '#8892b0',
+    groupText: isLight ? '#8892b0' : '#4a5470',
+    groupStroke:isLight? '#d0d6e8' : '#252c3f',
+    edge:      isLight ? '#16a34a' : '#4ade80',
+    edgeDim:   isLight ? '#b0bad4' : '#4a5470',
+  };
+
+  let maxX=600, maxY=400;
+  Object.values(positions).forEach(p=>{maxX=Math.max(maxX,p.x+NODE_W/2+PAD_X);maxY=Math.max(maxY,p.y+NODE_H/2+PAD_Y);});
+  Object.values(groupRects).forEach(r=>{maxX=Math.max(maxX,r.x+r.w+GROUP_PAD);maxY=Math.max(maxY,r.y+r.h+GROUP_PAD);});
+  const W=maxX+60, H=maxY+60;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:'JetBrains Mono',monospace;">
+<defs>
+  <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="${C.edge}" opacity="0.75"/>
+  </marker>
+  <marker id="arr-dim" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="${C.edgeDim}" opacity="0.7"/>
+  </marker>
+  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur stdDeviation="2.5" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+    <feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="${C.nodeShadow}" flood-opacity="${isLight?'0.1':'0.35'}"/>
+  </filter>
+</defs>`;
+
+  // Background
+  svg += `<rect width="${W}" height="${H}" fill="${C.bg}" rx="14"/>`;
+
+  // Groups
+  (groups||[]).forEach(g=>{
+    const r=groupRects[g.id]; if(!r) return;
+    const groupFill = isLight
+      ? g.color.replace(/#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i, (_, r, g, b) => `#f${r[1]}f${g[1]}f${b[1]}`)
+      : (g.color||'#161b25');
+    svg += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="10" fill="${isLight?'#f5f7fc':g.color||'#161b25'}" stroke="${C.groupStroke}" stroke-width="1.2" opacity="0.95"/>`;
+    svg += `<text x="${r.x+11}" y="${r.y+15}" font-size="9" fill="${C.groupText}" letter-spacing="0.1em" font-family="'JetBrains Mono',monospace">${escX(g.label.toUpperCase())}</text>`;
+  });
+
+  // Edges
+  (edges||[]).forEach(e=>{
+    const s=positions[e.from], t=positions[e.to]; if(!s||!t) return;
+    const dx=t.x-s.x, dy=t.y-s.y, len=Math.sqrt(dx*dx+dy*dy); if(len<1) return;
+    const nx=dx/len, ny=dy/len;
+    const x1=s.x+nx*(NODE_W/2+2), y1=s.y+ny*(NODE_H/2+2);
+    const x2=t.x-nx*(NODE_W/2+10), y2=t.y-ny*(NODE_H/2+10);
+    const isDim = e.label && /monitor|log|metric|audit|scrape/i.test(e.label);
+    const stroke=isDim?C.edgeDim:C.edge;
+    const opacity=isDim?'0.4':'0.5';
+    const dash=isDim?'stroke-dasharray="4 3"':'';
+    const marker=isDim?'arr-dim':'arr';
+    const mx=(x1+x2)/2-(y2-y1)*0.18, my=(y1+y2)/2+(x2-x1)*0.18;
+    svg += `<path d="M${x1},${y1} Q${mx},${my} ${x2},${y2}" fill="none" stroke="${stroke}" stroke-width="1.3" opacity="${opacity}" ${dash} marker-end="url(#${marker})"/>`;
+    if(e.label){
+      const lx=(x1*0.4+x2*0.6), ly=(y1*0.4+y2*0.6)-5;
+      svg += `<rect x="${lx-20}" y="${ly-8}" width="40" height="13" rx="3" fill="${C.bg}" opacity="0.9"/>`;
+      svg += `<text x="${lx}" y="${ly+3}" text-anchor="middle" font-size="8" fill="${C.text2}" font-family="'JetBrains Mono',monospace">${escX(e.label)}</text>`;
+    }
+  });
+
+  // Nodes
+  (nodes||[]).forEach(n=>{
+    const p=positions[n.id]; if(!p) return;
+    const x=p.x-NODE_W/2, y=p.y-NODE_H/2;
+    const col=n.color||'#333d57';
+    svg += `<rect x="${x+2}" y="${y+3}" width="${NODE_W}" height="${NODE_H}" rx="9" fill="${C.nodeShadow}" opacity="${isLight?'1':'0.3'}"/>`;
+    svg += `<rect x="${x}" y="${y}" width="${NODE_W}" height="${NODE_H}" rx="9" fill="${C.node}" stroke="${col}" stroke-width="1.3" filter="url(#shadow)"/>`;
+    svg += `<rect x="${x+1}" y="${y+1}" width="${NODE_W-2}" height="4" rx="8" fill="${col}" opacity="0.85"/>`;
+    svg += `<rect x="${x+1}" y="${y+5}" width="${NODE_W-2}" height="3" rx="0" fill="${col}" opacity="${isLight?'0.08':'0.12'}"/>`;
+    if(n.icon) svg += `<text x="${p.x-34}" y="${p.y+5}" font-size="17" text-anchor="middle" filter="url(#glow)">${n.icon}</text>`;
+    const lines=(n.label||'').split('\n');
+    const lineH=12;
+    const totalH=lines.length*lineH;
+    const startY=p.y-totalH/2+lineH/2+(lines.length>1?1:5);
+    lines.forEach((ln,i)=>{
+      const fw=i===0?'500':'400';
+      const fc=i===0?C.text1:C.text2;
+      const fs=i===0?'10':'9';
+      svg += `<text x="${p.x+8}" y="${startY+i*lineH}" text-anchor="middle" font-size="${fs}" fill="${fc}" font-weight="${fw}" font-family="'JetBrains Mono',monospace">${escX(ln)}</text>`;
+    });
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
+function escX(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ═══════════════════════════════════════════════════════
+//  DSL GENERATOR
+// ═══════════════════════════════════════════════════════
+function generateDSL(data, title, plat) {
+  const platNames = {aws:'AWS',azure:'Azure',gcp:'GCP',k8s:'Kubernetes',cicd:'CI/CD',tf:'Terraform',docker:'Docker',net:'Network',obs:'Observability'};
+  const lines = [
+    `# Architecture: ${title}`,
+    `# Platform: ${platNames[plat]||plat.toUpperCase()}`,
+    `# Generated by ArchLab — arch.eknathalabs.com`,
+    `# Mode: ${appMode==='ai'?'AI Generated':'Offline/Template'}`,
+    '',
+  ];
+  if (data.groups?.length) {
+    lines.push('GROUPS:');
+    data.groups.forEach(g=>lines.push(`  [${g.id}] "${g.label}"  color:${g.color||'auto'}`));
+    lines.push('');
+  }
+  lines.push('NODES:');
+  data.nodes?.forEach(n=>{
+    lines.push(`  (${n.id}) "${(n.label||'').replace(/\n/g,' ')}"  icon:${n.icon||'⬡'}  group:${n.group||'none'}`);
+  });
+  lines.push('');
+  lines.push('CONNECTIONS:');
+  data.edges?.forEach(e=>{
+    const lbl = e.label ? ` [${e.label}]` : '';
+    lines.push(`  ${e.from} --> ${e.to}${lbl}`);
+  });
+  return lines.join('\n');
+}
+
+// ═══════════════════════════════════════════════════════
+//  VIEW CONTROLS
+// ═══════════════════════════════════════════════════════
+function switchView(v) {
+  const vd=document.getElementById('view-diagram'), vc=document.getElementById('view-code');
+  const td=document.getElementById('tab-d'), tc=document.getElementById('tab-c');
+  if(v==='diagram'){vd.style.display='flex';vc.style.display='none';td.classList.add('active');tc.classList.remove('active');}
+  else{vd.style.display='none';vc.style.display='block';td.classList.remove('active');tc.classList.add('active');}
+}
+
+function zoomFit() { const w=document.getElementById('diag-wrap'); if(w){w.scrollTop=0;w.scrollLeft=0;} }
+
+// ═══════════════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════════════
+function exportSVG() {
+  const svg=document.querySelector('#diag-out svg'); if(!svg) return;
+  const blob=new Blob([svg.outerHTML],{type:'image/svg+xml'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=(currentTitle||'architecture')+'.svg'; a.click();
+}
+
+function exportPNG() {
+  const svg=document.querySelector('#diag-out svg'); if(!svg) return;
+  const s=new XMLSerializer().serializeToString(svg);
+  const vb=svg.getAttribute('viewBox').split(' ');
+  const W=parseInt(vb[2])*2, H=parseInt(vb[3])*2;
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas'); c.width=W; c.height=H;
+    const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,W,H);
+    const a=document.createElement('a'); a.download=(currentTitle||'architecture')+'.png';
+    a.href=c.toDataURL('image/png'); a.click();
+  };
+  img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(s)));
+}
+
+function copyDSL() {
+  const code=document.getElementById('code-out').textContent; if(!code) return;
+  navigator.clipboard.writeText(code).then(()=>{
+    const b=document.getElementById('btn-copy');
+    const orig=b.textContent; b.textContent='✓ Copied!';
+    setTimeout(()=>b.textContent=orig,1500);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  ERRORS & INFO
+// ═══════════════════════════════════════════════════════
+function showErr(msg) { const e=document.getElementById('err'); e.textContent='⚠ '+msg; e.style.display='block'; }
+function hideErr() { document.getElementById('err').style.display='none'; }
+function showInfo(msg) { /* non-blocking toast could go here */ console.log(msg); }
+
+// ═══════════════════════════════════════════════════════
+//  KEYBOARD
+// ═══════════════════════════════════════════════════════
+document.getElementById('prompt').addEventListener('keydown', e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter') generate();
+});
+</script>
+</body>
+</html>
