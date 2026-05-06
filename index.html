@@ -2867,26 +2867,179 @@ function zoomFit() { const w=document.getElementById('diag-wrap'); if(w){w.scrol
 // ═══════════════════════════════════════════════════════
 //  EXPORT
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  WATERMARK — tamper-resistant, baked into export SVG
+// ═══════════════════════════════════════════════════════
+function buildWatermarkedSVG(originalSvg) {
+  // Parse viewBox to know canvas dimensions
+  const vbMatch = originalSvg.match(/viewBox="([\d\s.]+)"/);
+  if (!vbMatch) return originalSvg;
+  const [, vbStr] = vbMatch;
+  const [vx, vy, vw, vh] = vbStr.trim().split(/\s+/).map(Number);
+
+  // ── Watermark config ──────────────────────────────────
+  const BRAND   = 'eknathalabs.com';
+  const URL_TXT = 'arch.eknathalabs.com';
+  const TOOL    = 'ArchLab';
+  const wColor  = '#4ade80';   // brand accent
+  const wAlpha  = 0.13;        // subtle but visible
+  const wAlpha2 = 0.07;        // diagonal repeat pattern
+
+  // ── 1. Diagonal tiled pattern (hardest to remove — it's a <defs> pattern) ─
+  const tileSz  = 220;
+  const diagWM  = `
+    <defs>
+      <pattern id="wm_tile" x="0" y="0" width="${tileSz}" height="${tileSz}" patternUnits="userSpaceOnUse" patternTransform="rotate(-28)">
+        <text x="10" y="28" font-family="'JetBrains Mono',monospace" font-size="11"
+              fill="${wColor}" opacity="${wAlpha2}" font-weight="500" letter-spacing="1">
+          ${BRAND}
+        </text>
+        <text x="40" y="60" font-family="'JetBrains Mono',monospace" font-size="9"
+              fill="${wColor}" opacity="${wAlpha2}" letter-spacing="0.5">
+          ⬡ ${TOOL}
+        </text>
+      </pattern>
+    </defs>
+    <rect x="${vx}" y="${vy}" width="${vw}" height="${vh}"
+          fill="url(#wm_tile)" pointer-events="none"/>`;
+
+  // ── 2. Corner badge — bottom-right (prominent, design-integrated) ─────────
+  const badgeW = 190, badgeH = 30;
+  const bx = vx + vw - badgeW - 10;
+  const by = vy + vh - badgeH - 10;
+  const cornerBadge = `
+    <rect x="${bx}" y="${by}" width="${badgeW}" height="${badgeH}"
+          rx="6" fill="#080a0f" opacity="0.82" pointer-events="none"/>
+    <rect x="${bx}" y="${by}" width="${badgeW}" height="2.5"
+          rx="2" fill="${wColor}" opacity="0.9" pointer-events="none"/>
+    <text x="${bx + 10}" y="${by + 13}"
+          font-family="'JetBrains Mono',monospace" font-size="8.5"
+          fill="${wColor}" opacity="0.95" font-weight="600" letter-spacing="0.5"
+          pointer-events="none">⬡ ${TOOL}</text>
+    <text x="${bx + 10}" y="${by + 24}"
+          font-family="'JetBrains Mono',monospace" font-size="7.5"
+          fill="#8892b0" opacity="0.9" letter-spacing="0.3"
+          pointer-events="none">${URL_TXT}</text>`;
+
+  // ── 3. Top-left small stamp ────────────────────────────────────────────────
+  const stampW = 140, stampH = 20;
+  const sx = vx + 10, sy = vy + 10;
+  const topStamp = `
+    <rect x="${sx}" y="${sy}" width="${stampW}" height="${stampH}"
+          rx="4" fill="#080a0f" opacity="0.65" pointer-events="none"/>
+    <text x="${sx + 8}" y="${sy + 14}"
+          font-family="'JetBrains Mono',monospace" font-size="8"
+          fill="${wColor}" opacity="0.8" letter-spacing="0.3"
+          pointer-events="none">⬡ ${BRAND}</text>`;
+
+  // ── 4. Mid-diagonal ghost text (very faint, spans full canvas) ────────────
+  const cx = vx + vw / 2, cy = vy + vh / 2;
+  const ghostText = `
+    <text x="${cx}" y="${cy}"
+          font-family="'JetBrains Mono',monospace" font-size="${Math.min(vw, vh) * 0.045}"
+          text-anchor="middle" dominant-baseline="middle"
+          fill="${wColor}" opacity="0.04" font-weight="700"
+          transform="rotate(-25, ${cx}, ${cy})"
+          pointer-events="none">${BRAND}</text>`;
+
+  // ── Inject into SVG ───────────────────────────────────────────────────────
+  // Insert defs+tile pattern just after opening <svg tag (before existing <defs>)
+  let out = originalSvg;
+
+  // Merge our <defs> with existing ones rather than adding a second <defs>
+  if (out.includes('<defs>')) {
+    out = out.replace('<defs>',
+      `<defs>\n      <pattern id="wm_tile" x="0" y="0" width="${tileSz}" height="${tileSz}" patternUnits="userSpaceOnUse" patternTransform="rotate(-28)">` +
+      `<text x="10" y="28" font-family="'JetBrains Mono',monospace" font-size="11" fill="${wColor}" opacity="${wAlpha2}" font-weight="500" letter-spacing="1">${BRAND}</text>` +
+      `<text x="40" y="60" font-family="'JetBrains Mono',monospace" font-size="9" fill="${wColor}" opacity="${wAlpha2}" letter-spacing="0.5">⬡ ${TOOL}</text>` +
+      `</pattern>`
+    );
+  } else {
+    out = out.replace('<svg', `<svg`);
+    out = out.replace('>', `>\n<defs><pattern id="wm_tile" x="0" y="0" width="${tileSz}" height="${tileSz}" patternUnits="userSpaceOnUse" patternTransform="rotate(-28)"><text x="10" y="28" font-family="'JetBrains Mono',monospace" font-size="11" fill="${wColor}" opacity="${wAlpha2}">` + BRAND + `</text></pattern></defs>`, 1);
+  }
+
+  // Inject tiled pattern rect right after the background rect
+  out = out.replace(
+    /(<rect[^>]+rx="14"\/>)/,
+    `$1\n    <rect x="${vx}" y="${vy}" width="${vw}" height="${vh}" fill="url(#wm_tile)" pointer-events="none"/>`
+  );
+
+  // Inject ghost text, corner badge, top stamp before </svg>
+  out = out.replace('</svg>',
+    `${ghostText}\n${topStamp}\n${cornerBadge}\n</svg>`
+  );
+
+  return out;
+}
+
 function exportSVG() {
-  const svg=document.querySelector('#diag-out svg'); if(!svg) return;
-  const blob=new Blob([svg.outerHTML],{type:'image/svg+xml'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download=(currentTitle||'architecture')+'.svg'; a.click();
+  const svg = document.querySelector('#diag-out svg');
+  if (!svg) return;
+  const watermarked = buildWatermarkedSVG(svg.outerHTML);
+  const blob = new Blob([watermarked], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (currentTitle || 'architecture') + '-eknathalabs.svg';
+  a.click();
 }
 
 function exportPNG() {
-  const svg=document.querySelector('#diag-out svg'); if(!svg) return;
-  const s=new XMLSerializer().serializeToString(svg);
-  const vb=svg.getAttribute('viewBox').split(' ');
-  const W=parseInt(vb[2])*2, H=parseInt(vb[3])*2;
-  const img=new Image();
-  img.onload=()=>{
-    const c=document.createElement('canvas'); c.width=W; c.height=H;
-    const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,W,H);
-    const a=document.createElement('a'); a.download=(currentTitle||'architecture')+'.png';
-    a.href=c.toDataURL('image/png'); a.click();
+  const svg = document.querySelector('#diag-out svg');
+  if (!svg) return;
+  const watermarked = buildWatermarkedSVG(svg.outerHTML);
+  const vb = svg.getAttribute('viewBox').split(' ');
+  const W = parseInt(vb[2]) * 2, H = parseInt(vb[3]) * 2;
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, W, H);
+
+    // Extra PNG-layer watermark: draw directly on canvas after SVG render
+    // This means even if someone strips SVG watermark before rasterising, canvas layer remains
+    const scale = W / parseInt(vb[2]);
+    ctx.save();
+
+    // Bottom-right badge on canvas
+    const bw = 380, bh = 58;
+    const bx = W - bw - 18, by = H - bh - 18;
+    ctx.fillStyle = 'rgba(8,10,15,0.80)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 10);
+    else ctx.rect(bx, by, bw, bh);
+    ctx.fill();
+    // Green top bar
+    ctx.fillStyle = '#4ade80';
+    ctx.fillRect(bx, by, bw, 4);
+    // Text
+    ctx.fillStyle = '#4ade80';
+    ctx.font = `bold ${15 * scale * 0.5}px 'JetBrains Mono', monospace`;
+    ctx.fillText('⬡ ArchLab', bx + 18, by + 28);
+    ctx.fillStyle = '#8892b0';
+    ctx.font = `${13 * scale * 0.5}px 'JetBrains Mono', monospace`;
+    ctx.fillText('arch.eknathalabs.com', bx + 18, by + 46);
+
+    // Diagonal ghost watermark on canvas
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(-25 * Math.PI / 180);
+    ctx.globalAlpha = 0.045;
+    ctx.fillStyle = '#4ade80';
+    ctx.font = `bold ${Math.min(W, H) * 0.045}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText('eknathalabs.com', 0, 0);
+    ctx.restore();
+
+    ctx.restore();
+
+    const a = document.createElement('a');
+    a.download = (currentTitle || 'architecture') + '-eknathalabs.png';
+    a.href = c.toDataURL('image/png');
+    a.click();
   };
-  img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(s)));
+  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(watermarked)));
 }
 
 function copyDSL() {
