@@ -481,15 +481,15 @@ textarea::placeholder { color:var(--text3); }
     <div class="sec">
       <div class="sec-label">⬡ Platform</div>
       <div class="platforms">
-        <button class="pbtn active" data-p="aws"    onclick="selP(this)"><span class="ic">☁</span><span class="plabel">AWS</span></button>
-        <button class="pbtn"        data-p="azure"  onclick="selP(this)"><span class="ic">🔷</span><span class="plabel">Azure</span></button>
-        <button class="pbtn"        data-p="gcp"    onclick="selP(this)"><span class="ic">🌐</span><span class="plabel">GCP</span></button>
-        <button class="pbtn"        data-p="k8s"    onclick="selP(this)"><span class="ic">⎈</span><span class="plabel">K8s</span></button>
-        <button class="pbtn"        data-p="cicd"   onclick="selP(this)"><span class="ic">🔁</span><span class="plabel">CI/CD</span></button>
-        <button class="pbtn"        data-p="tf"     onclick="selP(this)"><span class="ic">🏗</span><span class="plabel">Terraform</span></button>
-        <button class="pbtn"        data-p="docker" onclick="selP(this)"><span class="ic">🐳</span><span class="plabel">Docker</span></button>
-        <button class="pbtn"        data-p="net"    onclick="selP(this)"><span class="ic">🛡</span><span class="plabel">Network</span></button>
-        <button class="pbtn"        data-p="obs"    onclick="selP(this)"><span class="ic">📊</span><span class="plabel">Observe</span></button>
+        <button class="pbtn active" data-p="aws"    onclick="selP(event)"><span class="ic">☁</span><span class="plabel">AWS</span></button>
+        <button class="pbtn"        data-p="azure"  onclick="selP(event)"><span class="ic">🔷</span><span class="plabel">Azure</span></button>
+        <button class="pbtn"        data-p="gcp"    onclick="selP(event)"><span class="ic">🌐</span><span class="plabel">GCP</span></button>
+        <button class="pbtn"        data-p="k8s"    onclick="selP(event)"><span class="ic">⎈</span><span class="plabel">K8s</span></button>
+        <button class="pbtn"        data-p="cicd"   onclick="selP(event)"><span class="ic">🔁</span><span class="plabel">CI/CD</span></button>
+        <button class="pbtn"        data-p="tf"     onclick="selP(event)"><span class="ic">🏗</span><span class="plabel">Terraform</span></button>
+        <button class="pbtn"        data-p="docker" onclick="selP(event)"><span class="ic">🐳</span><span class="plabel">Docker</span></button>
+        <button class="pbtn"        data-p="net"    onclick="selP(event)"><span class="ic">🛡</span><span class="plabel">Network</span></button>
+        <button class="pbtn"        data-p="obs"    onclick="selP(event)"><span class="ic">📊</span><span class="plabel">Observe</span></button>
       </div>
     </div>
 
@@ -811,7 +811,6 @@ function toggleBlastMode() {
     btn.style.color = 'var(--red)';
     btn.style.background = 'rgba(248,113,113,0.1)';
     hint.style.display = 'inline-flex';
-    clearBlast();
   } else {
     btn.style.borderColor = '';
     btn.style.color = '';
@@ -819,6 +818,8 @@ function toggleBlastMode() {
     hint.style.display = 'none';
     clearBlast();
   }
+  // Always re-wire SVG click after toggling so cursor + handler update immediately
+  attachNodeClickHandlers();
 }
 
 function computeBlastRadius(nodeId) {
@@ -1024,7 +1025,9 @@ function quickPrompt(k) {
 // ═══════════════════════════════════════════════════════
 //  PLATFORM SELECT
 // ═══════════════════════════════════════════════════════
-function selP(btn) {
+function selP(e) {
+  const btn = e.target.closest('.pbtn');
+  if (!btn) return;
   document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   platform = btn.dataset.p;
@@ -1459,8 +1462,10 @@ const TEMPLATES = {
 function useTpl(key) {
   const t = TEMPLATES[key];
   if (!t) return;
+  // Select platform button directly without going through selP event handler
+  document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('active'));
   const pb = document.querySelector(`[data-p="${t.platform}"]`);
-  if (pb) selP(pb);
+  if (pb) { pb.classList.add('active'); platform = t.platform; }
   document.getElementById('prompt').value = t.title;
   currentTitle = t.title;
   renderData(t, t.title, 'TEMPLATE');
