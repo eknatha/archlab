@@ -169,8 +169,8 @@ header {
   font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--text3); text-align:center;
 }
 .pbtn:hover { border-color:var(--border2); background:var(--surface3); color:var(--text2); transform:translateY(-1px); }
-.pbtn .ic { font-size:18px; line-height:1; }
-.pbtn .plabel { margin-top:1px; }
+.pbtn .ic { font-size:18px; line-height:1; pointer-events:none; }
+.pbtn .plabel { margin-top:1px; pointer-events:none; }
 .pbtn[data-p="aws"].active   { color:var(--aws);    border-color:var(--aws);    background:#140b00; box-shadow:0 0 12px rgba(255,153,0,0.12); }
 .pbtn[data-p="azure"].active { color:var(--azure);  border-color:var(--azure);  background:#00091a; box-shadow:0 0 12px rgba(0,120,212,0.12); }
 .pbtn[data-p="gcp"].active   { color:var(--gcp);    border-color:var(--gcp);    background:#000818; box-shadow:0 0 12px rgba(66,133,244,0.12); }
@@ -426,7 +426,12 @@ textarea::placeholder { color:var(--text3); }
   .theme-btn { display:grid; }
 }
 @media(min-width:769px){
-  .sidebar { max-height:none !important; overflow-y:auto; }
+  .sidebar {
+    position:static !important;
+    max-height:none !important;
+    overflow-y:auto;
+    width:var(--sidebar-w);
+  }
   .mobile-toggle { display:none !important; }
 }
 
@@ -437,6 +442,80 @@ textarea::placeholder { color:var(--text3); }
 
 /* Diagram wrap position context for blast overlay */
 .diagram-wrap { position:relative; }
+
+/* ── SEQUENCE DIAGRAM ── */
+.seq-wrap {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:1.5rem; width:100%; overflow-x:auto; animation:fadeIn 0.4s ease;
+}
+.seq-svg { min-width:600px; }
+
+/* ── NODE EXPAND MODAL ── */
+.node-modal-backdrop {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65);
+  z-index:500; align-items:center; justify-content:center; backdrop-filter:blur(4px);
+}
+.node-modal-backdrop.open { display:flex; }
+.node-modal {
+  background:var(--surface); border:1px solid var(--border2); border-radius:14px;
+  padding:0; width:480px; max-width:92vw; max-height:85vh; overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,0.5); animation:fadeIn 0.2s ease;
+  display:flex; flex-direction:column;
+}
+.node-modal-header {
+  padding:14px 18px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:10px;
+}
+.node-modal-icon { font-size:22px; flex-shrink:0; }
+.node-modal-title { font-size:14px; font-weight:700; color:var(--text); flex:1; }
+.node-modal-close {
+  width:26px; height:26px; border-radius:6px; border:1px solid var(--border);
+  background:var(--surface2); cursor:pointer; color:var(--text2); font-size:13px;
+  display:grid; place-items:center; transition:all 0.15s;
+}
+.node-modal-close:hover { border-color:var(--border2); color:var(--text); }
+.node-modal-body { padding:16px 18px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:12px; }
+.node-modal-desc {
+  font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text2);
+  line-height:1.8; background:var(--surface2); border-radius:8px; padding:10px 12px;
+  border:1px solid var(--border);
+}
+.node-modal-section { display:flex; flex-direction:column; gap:5px; }
+.node-modal-sec-label { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text3); letter-spacing:0.1em; text-transform:uppercase; }
+.node-modal-chips { display:flex; flex-wrap:wrap; gap:4px; }
+.node-modal-chip {
+  font-family:'JetBrains Mono',monospace; font-size:9.5px; padding:3px 8px;
+  border-radius:4px; border:1px solid var(--border); background:var(--surface2); color:var(--text2);
+}
+.node-modal-chip.in { border-color:rgba(74,222,128,0.3); color:var(--accent); background:rgba(74,222,128,0.06); }
+.node-modal-chip.out { border-color:rgba(248,113,113,0.3); color:var(--red); background:rgba(248,113,113,0.06); }
+.node-modal-ai-loading { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text3); display:flex; align-items:center; gap:8px; }
+.node-modal-ai-loading .ring { width:14px; height:14px; border-width:1.5px; }
+.node-modal-hint { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text3); padding:6px 8px; background:rgba(74,222,128,0.04); border:1px solid rgba(74,222,128,0.1); border-radius:6px; }
+.nm-expand-hint { font-size:9px; color:var(--text3); font-family:'JetBrains Mono',monospace; }
+
+/* ── MINIMAP ── */
+.minimap {
+  position:absolute; bottom:12px; right:12px; width:140px; height:90px;
+  background:var(--surface); border:1px solid var(--border2); border-radius:8px;
+  overflow:hidden; cursor:pointer; display:none; z-index:20;
+  box-shadow:0 4px 16px rgba(0,0,0,0.3);
+}
+.minimap.visible { display:block; }
+.minimap canvas { width:100%; height:100%; display:block; }
+.minimap-viewport {
+  position:absolute; border:1.5px solid var(--accent); border-radius:2px;
+  pointer-events:none; opacity:0.7; background:rgba(74,222,128,0.06);
+}
+.minimap-toggle {
+  position:absolute; bottom:12px; right:160px; z-index:20;
+  background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+  padding:4px 8px; font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text3);
+  cursor:pointer; display:none; transition:all 0.15s;
+}
+.minimap-toggle.visible { display:block; }
+.minimap-toggle:hover { border-color:var(--border2); color:var(--text2); }
+.minimap-toggle.active { border-color:var(--accent); color:var(--accent); background:rgba(74,222,128,0.08); }
 </style>
 </head>
 <body>
@@ -481,15 +560,15 @@ textarea::placeholder { color:var(--text3); }
     <div class="sec">
       <div class="sec-label">⬡ Platform</div>
       <div class="platforms">
-        <button class="pbtn active" data-p="aws"    onclick="selP(event)"><span class="ic">☁</span><span class="plabel">AWS</span></button>
-        <button class="pbtn"        data-p="azure"  onclick="selP(event)"><span class="ic">🔷</span><span class="plabel">Azure</span></button>
-        <button class="pbtn"        data-p="gcp"    onclick="selP(event)"><span class="ic">🌐</span><span class="plabel">GCP</span></button>
-        <button class="pbtn"        data-p="k8s"    onclick="selP(event)"><span class="ic">⎈</span><span class="plabel">K8s</span></button>
-        <button class="pbtn"        data-p="cicd"   onclick="selP(event)"><span class="ic">🔁</span><span class="plabel">CI/CD</span></button>
-        <button class="pbtn"        data-p="tf"     onclick="selP(event)"><span class="ic">🏗</span><span class="plabel">Terraform</span></button>
-        <button class="pbtn"        data-p="docker" onclick="selP(event)"><span class="ic">🐳</span><span class="plabel">Docker</span></button>
-        <button class="pbtn"        data-p="net"    onclick="selP(event)"><span class="ic">🛡</span><span class="plabel">Network</span></button>
-        <button class="pbtn"        data-p="obs"    onclick="selP(event)"><span class="ic">📊</span><span class="plabel">Observe</span></button>
+        <button class="pbtn active" data-p="aws"   ><span class="ic">☁</span><span class="plabel">AWS</span></button>
+        <button class="pbtn"        data-p="azure" ><span class="ic">🔷</span><span class="plabel">Azure</span></button>
+        <button class="pbtn"        data-p="gcp"   ><span class="ic">🌐</span><span class="plabel">GCP</span></button>
+        <button class="pbtn"        data-p="k8s"   ><span class="ic">⎈</span><span class="plabel">K8s</span></button>
+        <button class="pbtn"        data-p="cicd"  ><span class="ic">🔁</span><span class="plabel">CI/CD</span></button>
+        <button class="pbtn"        data-p="tf"    ><span class="ic">🏗</span><span class="plabel">Terraform</span></button>
+        <button class="pbtn"        data-p="docker"><span class="ic">🐳</span><span class="plabel">Docker</span></button>
+        <button class="pbtn"        data-p="net"   ><span class="ic">🛡</span><span class="plabel">Network</span></button>
+        <button class="pbtn"        data-p="obs"   ><span class="ic">📊</span><span class="plabel">Observe</span></button>
       </div>
     </div>
 
@@ -500,15 +579,27 @@ textarea::placeholder { color:var(--text3); }
         <button class="tbtn" onclick="useTpl('aws3tier')"><span class="ti">☁</span><span class="tname">AWS 3-Tier Web App</span></button>
         <button class="tbtn" onclick="useTpl('awsServerless')"><span class="ti">⚡</span><span class="tname">AWS Serverless API</span></button>
         <button class="tbtn" onclick="useTpl('eksCluster')"><span class="ti">⎈</span><span class="tname">EKS Production Cluster</span></button>
+        <button class="tbtn" onclick="useTpl('awsVpc')"><span class="ti">🌐</span><span class="tname">AWS VPC Architecture</span></button>
         <button class="tbtn" onclick="useTpl('azureAks')"><span class="ti">🔷</span><span class="tname">Azure AKS Microservices</span></button>
+        <button class="tbtn" onclick="useTpl('azureThreeTier')"><span class="ti">🔷</span><span class="tname">Azure 3-Tier Web App</span></button>
+        <button class="tbtn" onclick="useTpl('azureServerless')"><span class="ti">⚡</span><span class="tname">Azure Serverless Event-Driven</span></button>
+        <button class="tbtn" onclick="useTpl('azureDataPlatform')"><span class="ti">🗄</span><span class="tname">Azure Data Platform</span></button>
+        <button class="tbtn" onclick="useTpl('azureDevSecOps')"><span class="ti">🛡</span><span class="tname">Azure DevSecOps Pipeline</span></button>
         <button class="tbtn" onclick="useTpl('gcpData')"><span class="ti">🌐</span><span class="tname">GCP Data Platform</span></button>
+        <button class="tbtn" onclick="useTpl('gcpThreeTier')"><span class="ti">🌐</span><span class="tname">GCP 3-Tier Web App</span></button>
+        <button class="tbtn" onclick="useTpl('gcpGke')"><span class="ti">⎈</span><span class="tname">GCP GKE Production</span></button>
+        <button class="tbtn" onclick="useTpl('gcpServerless')"><span class="ti">⚡</span><span class="tname">GCP Serverless Event-Driven</span></button>
+        <button class="tbtn" onclick="useTpl('gcpDataEngineering')"><span class="ti">🤖</span><span class="tname">GCP Data Engineering</span></button>
+        <button class="tbtn" onclick="useTpl('k8sMicroservices')"><span class="ti">⎈</span><span class="tname">K8s Microservices</span></button>
+        <button class="tbtn" onclick="useTpl('k8sRbacSecurity')"><span class="ti">🔐</span><span class="tname">K8s RBAC & Security</span></button>
+        <button class="tbtn" onclick="useTpl('k8sMultiTenant')"><span class="ti">⎈</span><span class="tname">K8s Multi-Tenant Platform</span></button>
+        <button class="tbtn" onclick="useTpl('k8sNetworking')"><span class="ti">🌐</span><span class="tname">K8s Networking Deep Dive</span></button>
+        <button class="tbtn" onclick="useTpl('k8sStatefulWorkloads')"><span class="ti">🗄</span><span class="tname">K8s Stateful Workloads</span></button>
         <button class="tbtn" onclick="useTpl('githubCicd')"><span class="ti">🔁</span><span class="tname">GitHub Actions CI/CD</span></button>
         <button class="tbtn" onclick="useTpl('terraformAws')"><span class="ti">🏗</span><span class="tname">Terraform IaC Graph</span></button>
         <button class="tbtn" onclick="useTpl('dockerCompose')"><span class="ti">🐳</span><span class="tname">Docker Compose Stack</span></button>
         <button class="tbtn" onclick="useTpl('observability')"><span class="ti">📊</span><span class="tname">Observability Stack</span></button>
         <button class="tbtn" onclick="useTpl('zeroTrust')"><span class="ti">🔐</span><span class="tname">Zero Trust Network</span></button>
-        <button class="tbtn" onclick="useTpl('awsVpc')"><span class="ti">🌐</span><span class="tname">AWS VPC Architecture</span></button>
-        <button class="tbtn" onclick="useTpl('k8sMicroservices')"><span class="ti">⎈</span><span class="tname">K8s Microservices</span></button>
       </div>
     </div>
 
@@ -553,6 +644,7 @@ Press Ctrl+Enter to generate."></textarea>
       <span class="toolbar-title" id="diag-title">// select a template or describe your architecture</span>
       <div class="vtabs">
         <button class="vtab active" id="tab-d" onclick="switchView('diagram')">Diagram</button>
+        <button class="vtab" id="tab-s" onclick="switchView('sequence')">Sequence</button>
         <button class="vtab" id="tab-c" onclick="switchView('code')">DSL</button>
       </div>
       <button class="tbarbtn" id="btn-svg" onclick="exportSVG()" disabled>↓ SVG</button>
@@ -560,6 +652,7 @@ Press Ctrl+Enter to generate."></textarea>
       <button class="tbarbtn" id="btn-copy" onclick="copyDSL()" disabled>⎘ DSL</button>
       <button class="tbarbtn" id="btn-sbs" onclick="toggleSBS()" disabled title="Step-by-step build mode">▶ Steps</button>
       <button class="tbarbtn" id="btn-blast" onclick="toggleBlastMode()" disabled title="Blast radius — click a node to see impact">💥 Blast</button>
+      <button class="tbarbtn" id="btn-expand" onclick="toggleExpandMode()" disabled title="Click any node to expand details">🔍 Expand</button>
       <button class="tbarbtn" onclick="zoomFit()">⊞ Fit</button>
     </div>
 
@@ -609,6 +702,7 @@ Press Ctrl+Enter to generate."></textarea>
           <span class="ai-tag" id="gen-method-tag">TEMPLATE</span>
           <span class="arch-title" id="arch-title-display"></span>
           <span class="click-hint" id="blast-hint" style="display:none">💥 Click a node to see blast radius</span>
+          <span class="nm-expand-hint" id="expand-hint" style="display:none">🔍 Click any node to expand details</span>
         </div>
         <div class="blast-overlay" id="blast-overlay">
           <div class="blast-title">💥 BLAST RADIUS</div>
@@ -616,7 +710,20 @@ Press Ctrl+Enter to generate."></textarea>
           <span class="blast-dismiss" onclick="clearBlast()">dismiss ✕</span>
         </div>
         <div id="diag-out"></div>
+        <!-- Minimap -->
+        <button class="minimap-toggle" id="minimap-toggle" onclick="toggleMinimap()">⊟ Map</button>
+        <div class="minimap" id="minimap">
+          <canvas id="minimap-canvas"></canvas>
+          <div class="minimap-viewport" id="minimap-vp"></div>
+        </div>
       </div>
+
+    <!-- Sequence view -->
+    <div class="view diagram-view" id="view-sequence" style="display:none">
+      <div class="seq-wrap" id="seq-wrap">
+        <div id="seq-out"></div>
+      </div>
+    </div>
     </div>
 
     <!-- Code/DSL view -->
@@ -626,6 +733,37 @@ Press Ctrl+Enter to generate."></textarea>
 
   </div><!-- /canvas -->
 </div><!-- /main -->
+
+<!-- NODE EXPAND MODAL -->
+<div class="node-modal-backdrop" id="node-modal-backdrop" onclick="closeNodeModal(event)">
+  <div class="node-modal" id="node-modal">
+    <div class="node-modal-header">
+      <span class="node-modal-icon" id="nm-icon">⬡</span>
+      <span class="node-modal-title" id="nm-title">Service Name</span>
+      <button class="node-modal-close" onclick="closeNodeModalDirect()">✕</button>
+    </div>
+    <div class="node-modal-body">
+      <div class="node-modal-hint" id="nm-hint">Click on a node in the diagram while Expand mode is active to see details.</div>
+      <div class="node-modal-desc" id="nm-desc" style="display:none"></div>
+      <div class="node-modal-ai-loading" id="nm-loading" style="display:none">
+        <div class="ring"></div><span>Generating explanation…</span>
+      </div>
+      <div class="node-modal-section" id="nm-connections" style="display:none">
+        <div class="node-modal-sec-label">Incoming connections</div>
+        <div class="node-modal-chips" id="nm-in"></div>
+      </div>
+      <div class="node-modal-section" id="nm-connections-out" style="display:none">
+        <div class="node-modal-sec-label">Outgoing connections</div>
+        <div class="node-modal-chips" id="nm-out"></div>
+      </div>
+      <div class="node-modal-section" id="nm-group-sec" style="display:none">
+        <div class="node-modal-sec-label">Layer / Group</div>
+        <div class="node-modal-chips" id="nm-group"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /app -->
 
 <script>
@@ -931,18 +1069,15 @@ function clearBlast() {
 }
 
 function attachNodeClickHandlers() {
-  // We need positions stored globally for blast highlight
-  // Nodes in SVG have rect elements — attach click via data attribute
   if (!currentData) return;
   const svg = document.querySelector('#diag-out svg');
   if (!svg) return;
-  // We'll use a delegated click approach on the SVG
-  svg.style.cursor = blastModeActive ? 'crosshair' : 'default';
+  const isBlast = blastModeActive;
+  const isExpand = expandModeActive;
+  svg.style.cursor = (isBlast || isExpand) ? 'crosshair' : 'default';
   svg.onclick = null;
-  if (!blastModeActive) return;
+  if (!isBlast && !isExpand) return;
   svg.onclick = (e) => {
-    if (!blastModeActive) return;
-    // Find which node was clicked using stored positions
     const positions = window._lastPositions || {};
     const svgRect = svg.getBoundingClientRect();
     const vb = svg.getAttribute('viewBox').split(' ').map(Number);
@@ -954,11 +1089,12 @@ function attachNodeClickHandlers() {
     for (const [id, p] of Object.entries(positions)) {
       if (cx >= p.x - NODE_W/2 && cx <= p.x + NODE_W/2 &&
           cy >= p.y - NODE_H/2 && cy <= p.y + NODE_H/2) {
-        showBlastRadius(id);
+        if (isBlast) showBlastRadius(id);
+        else if (isExpand) openNodeModal(id);
         return;
       }
     }
-    clearBlast();
+    if (isBlast) clearBlast();
   };
 }
 
@@ -977,6 +1113,8 @@ function getKey() {
 }
 window.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  initPlatformButtons();
+  initMinimapScroll();
   const stored = getKey();
   if (stored) document.getElementById('apikey').value = '••••••••••••••••';
   useTpl('aws3tier');
@@ -1023,14 +1161,16 @@ function quickPrompt(k) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  PLATFORM SELECT
+//  PLATFORM SELECT — delegated listener on container
 // ═══════════════════════════════════════════════════════
-function selP(e) {
-  const btn = e.target.closest('.pbtn');
-  if (!btn) return;
-  document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  platform = btn.dataset.p;
+function initPlatformButtons() {
+  document.querySelector('.platforms').addEventListener('click', e => {
+    const btn = e.target.closest('.pbtn');
+    if (!btn) return;
+    document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    platform = btn.dataset.p;
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1453,6 +1593,478 @@ const TEMPLATES = {
       {from:'api_gw',to:'redis',label:'cache'},{from:'argo',to:'api_gw',label:'deploy'},
       {from:'prometheus',to:'user_svc',label:'scrape'},{from:'prometheus',to:'order_svc',label:'scrape'},
     ]
+  },
+
+  // ── GCP TEMPLATES ────────────────────────────────────
+  gcpThreeTier:{
+    platform:'gcp',title:'GCP 3-Tier Web Application',
+    groups:[
+      {id:'g_internet',label:'Internet',color:'#1a2a1a'},
+      {id:'g_edge',label:'Edge & CDN Layer',color:'#00071a'},
+      {id:'g_compute',label:'Compute Layer — Cloud Run',color:'#001520'},
+      {id:'g_data',label:'Data Layer',color:'#1a0a00'},
+      {id:'g_ops',label:'Operations',color:'#001a10'},
+    ],
+    nodes:[
+      {id:'users',label:'Users\n(Browser/Mobile)',icon:'👤',group:'g_internet'},
+      {id:'cdn',label:'Cloud CDN\nGlobal Cache',icon:'🌐',color:'#4285f4',group:'g_edge'},
+      {id:'lb',label:'Cloud Load\nBalancing (HTTPS)',icon:'🌐',color:'#4285f4',group:'g_edge'},
+      {id:'armor',label:'Cloud Armor\nWAF & DDoS',icon:'🛡',color:'#4285f4',group:'g_edge'},
+      {id:'gcs_static',label:'Cloud Storage\nStatic Assets',icon:'☁',color:'#4285f4',group:'g_edge'},
+      {id:'cr_api',label:'Cloud Run\nAPI Service',icon:'⚡',color:'#4285f4',group:'g_compute'},
+      {id:'cr_worker',label:'Cloud Run\nBackground Worker',icon:'⚡',color:'#4285f4',group:'g_compute'},
+      {id:'pubsub',label:'Pub/Sub\nMessage Queue',icon:'📨',color:'#4285f4',group:'g_compute'},
+      {id:'cloudsql',label:'Cloud SQL\nPostgreSQL (HA)',icon:'🗄',color:'#4285f4',group:'g_data'},
+      {id:'memstore',label:'Memorystore\nRedis Cache',icon:'⚡',color:'#4285f4',group:'g_data'},
+      {id:'gcs_data',label:'Cloud Storage\nData Bucket',icon:'☁',color:'#4285f4',group:'g_data'},
+      {id:'monitoring',label:'Cloud Monitoring\n& Logging',icon:'📊',color:'#4285f4',group:'g_ops'},
+      {id:'secret',label:'Secret Manager\nCredentials',icon:'🔑',color:'#4285f4',group:'g_ops'},
+    ],
+    edges:[
+      {from:'users',to:'cdn',label:'HTTPS'},{from:'cdn',to:'armor',label:''},
+      {from:'armor',to:'lb',label:'filtered'},{from:'cdn',to:'gcs_static',label:'static'},
+      {from:'lb',to:'cr_api',label:'route'},{from:'cr_api',to:'cloudsql',label:'SQL'},
+      {from:'cr_api',to:'memstore',label:'cache'},{from:'cr_api',to:'pubsub',label:'publish'},
+      {from:'pubsub',to:'cr_worker',label:'subscribe'},{from:'cr_worker',to:'cloudsql',label:'write'},
+      {from:'cr_worker',to:'gcs_data',label:'store'},{from:'secret',to:'cr_api',label:'secrets'},
+      {from:'monitoring',to:'cr_api',label:'logs'},{from:'monitoring',to:'cr_worker',label:'logs'},
+    ]
+  },
+
+  gcpGke:{
+    platform:'gcp',title:'GCP GKE Production Cluster',
+    groups:[
+      {id:'g_edge',label:'Edge & Ingress',color:'#00071a'},
+      {id:'g_mesh',label:'Service Mesh (Anthos)',color:'#001020'},
+      {id:'g_workload',label:'GKE Workloads',color:'#0d0020'},
+      {id:'g_data',label:'Managed Data Services',color:'#1a0a00'},
+      {id:'g_devops',label:'DevOps & Security',color:'#001a10'},
+    ],
+    nodes:[
+      {id:'glb',label:'Global Load\nBalancer (GLB)',icon:'🌐',color:'#4285f4',group:'g_edge'},
+      {id:'armor',label:'Cloud Armor\nWAF',icon:'🛡',color:'#4285f4',group:'g_edge'},
+      {id:'ingress',label:'GKE Ingress\nController',icon:'⎈',color:'#4285f4',group:'g_edge'},
+      {id:'anthos',label:'Anthos Service\nMesh (Istio)',icon:'🔀',color:'#4285f4',group:'g_mesh'},
+      {id:'api_svc',label:'API Gateway\nService',icon:'⎈',color:'#4285f4',group:'g_workload'},
+      {id:'user_svc',label:'User\nService',icon:'⎈',color:'#4285f4',group:'g_workload'},
+      {id:'order_svc',label:'Order\nService',icon:'⎈',color:'#4285f4',group:'g_workload'},
+      {id:'notify_svc',label:'Notification\nService',icon:'⎈',color:'#4285f4',group:'g_workload'},
+      {id:'pubsub',label:'Pub/Sub\nEvent Bus',icon:'📨',color:'#4285f4',group:'g_mesh'},
+      {id:'cloudsql',label:'Cloud SQL\nPostgreSQL',icon:'🗄',color:'#4285f4',group:'g_data'},
+      {id:'firestore',label:'Firestore\nNoSQL',icon:'🗄',color:'#4285f4',group:'g_data'},
+      {id:'gcs',label:'Cloud Storage\nObjects',icon:'☁',color:'#4285f4',group:'g_data'},
+      {id:'cloudbuild',label:'Cloud Build\nCI/CD',icon:'🔁',color:'#4285f4',group:'g_devops'},
+      {id:'artifact',label:'Artifact Registry\nContainer Images',icon:'📦',color:'#4285f4',group:'g_devops'},
+      {id:'monitoring',label:'Cloud Monitoring\nPrometheus',icon:'📊',color:'#4285f4',group:'g_devops'},
+    ],
+    edges:[
+      {from:'glb',to:'armor',label:''},{from:'armor',to:'ingress',label:'filtered'},
+      {from:'ingress',to:'anthos',label:''},{from:'anthos',to:'api_svc',label:'mTLS'},
+      {from:'api_svc',to:'user_svc',label:'gRPC'},{from:'api_svc',to:'order_svc',label:'gRPC'},
+      {from:'order_svc',to:'pubsub',label:'publish'},{from:'pubsub',to:'notify_svc',label:'subscribe'},
+      {from:'user_svc',to:'cloudsql',label:'SQL'},{from:'order_svc',to:'firestore',label:'write'},
+      {from:'notify_svc',to:'gcs',label:'store'},{from:'cloudbuild',to:'artifact',label:'push image'},
+      {from:'cloudbuild',to:'api_svc',label:'deploy'},{from:'monitoring',to:'api_svc',label:'scrape'},
+      {from:'monitoring',to:'order_svc',label:'scrape'},
+    ]
+  },
+
+  gcpServerless:{
+    platform:'gcp',title:'GCP Serverless Event-Driven Architecture',
+    groups:[
+      {id:'g_client',label:'Client & API',color:'#1a2a1a'},
+      {id:'g_gateway',label:'API Gateway Layer',color:'#00071a'},
+      {id:'g_functions',label:'Cloud Functions (Gen 2)',color:'#001520'},
+      {id:'g_events',label:'Event Bus',color:'#0d0020'},
+      {id:'g_store',label:'Storage & Data',color:'#1a0a00'},
+      {id:'g_ops',label:'Observability',color:'#001a10'},
+    ],
+    nodes:[
+      {id:'client',label:'Web / Mobile\nClient',icon:'📱',group:'g_client'},
+      {id:'firebase_auth',label:'Firebase Auth\nIdentity',icon:'🔐',color:'#4285f4',group:'g_gateway'},
+      {id:'apigw',label:'API Gateway\nCloud Endpoints',icon:'🌐',color:'#4285f4',group:'g_gateway'},
+      {id:'fn_api',label:'Cloud Function\nREST Handler',icon:'⚡',color:'#4285f4',group:'g_functions'},
+      {id:'fn_process',label:'Cloud Function\nData Processor',icon:'⚡',color:'#4285f4',group:'g_functions'},
+      {id:'fn_notify',label:'Cloud Function\nNotification',icon:'⚡',color:'#4285f4',group:'g_functions'},
+      {id:'fn_ml',label:'Cloud Function\nML Inference',icon:'🤖',color:'#4285f4',group:'g_functions'},
+      {id:'pubsub',label:'Pub/Sub\nEvent Streams',icon:'📨',color:'#4285f4',group:'g_events'},
+      {id:'eventarc',label:'Eventarc\nEvent Router',icon:'🔀',color:'#4285f4',group:'g_events'},
+      {id:'firestore',label:'Firestore\nNoSQL DB',icon:'🗄',color:'#4285f4',group:'g_store'},
+      {id:'gcs',label:'Cloud Storage\nFiles & Objects',icon:'☁',color:'#4285f4',group:'g_store'},
+      {id:'bigquery',label:'BigQuery\nAnalytics',icon:'🗄',color:'#4285f4',group:'g_store'},
+      {id:'vertex',label:'Vertex AI\nModel Endpoint',icon:'🤖',color:'#4285f4',group:'g_store'},
+      {id:'logging',label:'Cloud Logging\n& Monitoring',icon:'📊',color:'#4285f4',group:'g_ops'},
+    ],
+    edges:[
+      {from:'client',to:'firebase_auth',label:'auth'},{from:'client',to:'apigw',label:'JWT'},
+      {from:'apigw',to:'fn_api',label:'invoke'},{from:'fn_api',to:'firestore',label:'CRUD'},
+      {from:'fn_api',to:'gcs',label:'upload'},{from:'fn_api',to:'pubsub',label:'publish'},
+      {from:'pubsub',to:'fn_process',label:'trigger'},{from:'fn_process',to:'bigquery',label:'stream'},
+      {from:'eventarc',to:'fn_notify',label:'trigger'},{from:'fn_notify',to:'pubsub',label:'notify'},
+      {from:'fn_ml',to:'vertex',label:'predict'},{from:'pubsub',to:'fn_ml',label:'trigger'},
+      {from:'logging',to:'fn_api',label:'monitor'},{from:'logging',to:'fn_process',label:'monitor'},
+    ]
+  },
+
+  gcpDataEngineering:{
+    platform:'gcp',title:'GCP Enterprise Data Engineering Platform',
+    groups:[
+      {id:'g_src',label:'Data Sources',color:'#1a2a1a'},
+      {id:'g_ingest',label:'Ingestion Layer',color:'#00071a'},
+      {id:'g_lake',label:'Data Lake (Cloud Storage)',color:'#001520'},
+      {id:'g_process',label:'Processing & Transform',color:'#0d0020'},
+      {id:'g_warehouse',label:'Data Warehouse',color:'#1a0a00'},
+      {id:'g_serve',label:'Serving & AI',color:'#001a10'},
+      {id:'g_govern',label:'Governance & Orchestration',color:'#1a0818'},
+    ],
+    nodes:[
+      {id:'onprem',label:'On-Premises\nDatabases',icon:'🏢',group:'g_src'},
+      {id:'saas',label:'SaaS APIs\n(Salesforce/HubSpot)',icon:'📡',group:'g_src'},
+      {id:'streams',label:'IoT / App\nEvent Streams',icon:'📡',group:'g_src'},
+      {id:'datastream',label:'Datastream\nCDC Replication',icon:'🔄',color:'#4285f4',group:'g_ingest'},
+      {id:'pubsub',label:'Pub/Sub\nStream Ingest',icon:'📨',color:'#4285f4',group:'g_ingest'},
+      {id:'transfer',label:'Storage Transfer\nBatch Ingest',icon:'🔁',color:'#4285f4',group:'g_ingest'},
+      {id:'gcs_raw',label:'GCS Raw Zone\nParquet / Avro',icon:'☁',color:'#4285f4',group:'g_lake'},
+      {id:'gcs_curated',label:'GCS Curated Zone\nDelta / Iceberg',icon:'☁',color:'#4285f4',group:'g_lake'},
+      {id:'dataflow',label:'Dataflow\nStream + Batch ETL',icon:'🔄',color:'#4285f4',group:'g_process'},
+      {id:'dataproc',label:'Dataproc\nSpark / Hadoop',icon:'⚙',color:'#4285f4',group:'g_process'},
+      {id:'dbt',label:'dbt\nData Transforms',icon:'🔧',color:'#4285f4',group:'g_process'},
+      {id:'bq',label:'BigQuery\nData Warehouse',icon:'🗄',color:'#4285f4',group:'g_warehouse'},
+      {id:'bq_ml',label:'BigQuery ML\nIn-DB Models',icon:'🤖',color:'#4285f4',group:'g_warehouse'},
+      {id:'vertex',label:'Vertex AI\nML Pipelines',icon:'🤖',color:'#4285f4',group:'g_serve'},
+      {id:'looker',label:'Looker\nBI Dashboards',icon:'📊',color:'#4285f4',group:'g_serve'},
+      {id:'composer',label:'Cloud Composer\nAirflow DAGs',icon:'🎼',color:'#4285f4',group:'g_govern'},
+      {id:'dataplex',label:'Dataplex\nData Catalog',icon:'📋',color:'#4285f4',group:'g_govern'},
+    ],
+    edges:[
+      {from:'onprem',to:'datastream',label:'CDC'},{from:'saas',to:'transfer',label:'batch'},
+      {from:'streams',to:'pubsub',label:'stream'},{from:'datastream',to:'gcs_raw',label:'write'},
+      {from:'transfer',to:'gcs_raw',label:'load'},{from:'pubsub',to:'dataflow',label:'stream'},
+      {from:'gcs_raw',to:'dataflow',label:'batch'},{from:'gcs_raw',to:'dataproc',label:'batch'},
+      {from:'dataflow',to:'gcs_curated',label:'write'},{from:'dataproc',to:'gcs_curated',label:'write'},
+      {from:'gcs_curated',to:'dbt',label:'transform'},{from:'dbt',to:'bq',label:'load'},
+      {from:'bq',to:'bq_ml',label:'train'},{from:'bq',to:'looker',label:'query'},
+      {from:'bq_ml',to:'vertex',label:'deploy'},{from:'vertex',to:'looker',label:'predictions'},
+      {from:'composer',to:'dataflow',label:'orchestrate'},{from:'composer',to:'dataproc',label:'orchestrate'},
+      {from:'dataplex',to:'bq',label:'catalog'},
+    ]
+  },
+
+  // ── AZURE TEMPLATES ──────────────────────────────────
+  azureThreeTier:{
+    platform:'azure',title:'Azure 3-Tier Web Application',
+    groups:[
+      {id:'g_internet',label:'Internet',color:'#1a2a1a'},
+      {id:'g_edge',label:'Edge & CDN Layer',color:'#00091a'},
+      {id:'g_compute',label:'App Service / Compute',color:'#001020'},
+      {id:'g_data',label:'Data Layer',color:'#1a0a00'},
+      {id:'g_ops',label:'Operations & Security',color:'#001a10'},
+    ],
+    nodes:[
+      {id:'users',label:'Users\n(Browser/Mobile)',icon:'👤',group:'g_internet'},
+      {id:'afd',label:'Azure Front Door\nGlobal LB + WAF',icon:'🔷',color:'#0078d4',group:'g_edge'},
+      {id:'cdn',label:'Azure CDN\nStatic Assets',icon:'🌐',color:'#0078d4',group:'g_edge'},
+      {id:'blob_static',label:'Blob Storage\nStatic Files',icon:'☁',color:'#0078d4',group:'g_edge'},
+      {id:'apim',label:'API Management\nGateway',icon:'🔷',color:'#0078d4',group:'g_compute'},
+      {id:'appservice',label:'App Service\nWeb API (P3v3)',icon:'🔷',color:'#0078d4',group:'g_compute'},
+      {id:'funcapp',label:'Azure Functions\nAsync Workers',icon:'⚡',color:'#0078d4',group:'g_compute'},
+      {id:'servicebus',label:'Service Bus\nMessage Queue',icon:'📨',color:'#0078d4',group:'g_compute'},
+      {id:'sqldb',label:'Azure SQL\nDatabase (HA)',icon:'🗄',color:'#0078d4',group:'g_data'},
+      {id:'cosmos',label:'Cosmos DB\nNoSQL Global',icon:'🗄',color:'#0078d4',group:'g_data'},
+      {id:'redis',label:'Azure Cache\nfor Redis',icon:'⚡',color:'#0078d4',group:'g_data'},
+      {id:'keyvault',label:'Key Vault\nSecrets & Certs',icon:'🔑',color:'#0078d4',group:'g_ops'},
+      {id:'monitor',label:'Azure Monitor\n& App Insights',icon:'📊',color:'#0078d4',group:'g_ops'},
+    ],
+    edges:[
+      {from:'users',to:'afd',label:'HTTPS'},{from:'afd',to:'cdn',label:'static'},
+      {from:'cdn',to:'blob_static',label:''},{from:'afd',to:'apim',label:'filtered'},
+      {from:'apim',to:'appservice',label:'route'},{from:'appservice',to:'sqldb',label:'SQL'},
+      {from:'appservice',to:'redis',label:'cache'},{from:'appservice',to:'servicebus',label:'publish'},
+      {from:'servicebus',to:'funcapp',label:'trigger'},{from:'funcapp',to:'cosmos',label:'write'},
+      {from:'funcapp',to:'blob_static',label:'store'},{from:'keyvault',to:'appservice',label:'secrets'},
+      {from:'monitor',to:'appservice',label:'telemetry'},{from:'monitor',to:'funcapp',label:'telemetry'},
+    ]
+  },
+
+  azureServerless:{
+    platform:'azure',title:'Azure Serverless & Event-Driven',
+    groups:[
+      {id:'g_client',label:'Client',color:'#1a2a1a'},
+      {id:'g_gateway',label:'API & Identity Layer',color:'#00091a'},
+      {id:'g_compute',label:'Azure Functions',color:'#001020'},
+      {id:'g_events',label:'Event Streaming',color:'#0d0020'},
+      {id:'g_store',label:'Storage & Data',color:'#1a0a00'},
+      {id:'g_ops',label:'Monitoring',color:'#001a10'},
+    ],
+    nodes:[
+      {id:'client',label:'Web / Mobile\nClient',icon:'📱',group:'g_client'},
+      {id:'aad',label:'Azure AD B2C\nIdentity',icon:'🔐',color:'#0078d4',group:'g_gateway'},
+      {id:'apim',label:'API Management\nFacade',icon:'🔷',color:'#0078d4',group:'g_gateway'},
+      {id:'fn_http',label:'Function App\nHTTP Trigger',icon:'⚡',color:'#0078d4',group:'g_compute'},
+      {id:'fn_event',label:'Function App\nEvent Processor',icon:'⚡',color:'#0078d4',group:'g_compute'},
+      {id:'fn_timer',label:'Function App\nTimer Trigger',icon:'⚡',color:'#0078d4',group:'g_compute'},
+      {id:'fn_blob',label:'Function App\nBlob Trigger',icon:'⚡',color:'#0078d4',group:'g_compute'},
+      {id:'eventhub',label:'Event Hubs\nStream Ingestion',icon:'📨',color:'#0078d4',group:'g_events'},
+      {id:'servicebus',label:'Service Bus\nReliable Queue',icon:'📨',color:'#0078d4',group:'g_events'},
+      {id:'eventgrid',label:'Event Grid\nEvent Router',icon:'🔀',color:'#0078d4',group:'g_events'},
+      {id:'cosmos',label:'Cosmos DB\nGlobal NoSQL',icon:'🗄',color:'#0078d4',group:'g_store'},
+      {id:'blob',label:'Blob Storage\nFiles & Exports',icon:'☁',color:'#0078d4',group:'g_store'},
+      {id:'synapse',label:'Azure Synapse\nAnalytics',icon:'🗄',color:'#0078d4',group:'g_store'},
+      {id:'monitor',label:'App Insights\n& Log Analytics',icon:'📊',color:'#0078d4',group:'g_ops'},
+    ],
+    edges:[
+      {from:'client',to:'aad',label:'auth'},{from:'client',to:'apim',label:'JWT'},
+      {from:'apim',to:'fn_http',label:'invoke'},{from:'fn_http',to:'cosmos',label:'CRUD'},
+      {from:'fn_http',to:'servicebus',label:'enqueue'},{from:'servicebus',to:'fn_event',label:'trigger'},
+      {from:'fn_event',to:'cosmos',label:'write'},{from:'fn_event',to:'eventgrid',label:'emit'},
+      {from:'eventgrid',to:'fn_blob',label:'trigger'},{from:'fn_blob',to:'blob',label:'store'},
+      {from:'fn_timer',to:'synapse',label:'batch export'},{from:'eventhub',to:'fn_event',label:'stream'},
+      {from:'monitor',to:'fn_http',label:'telemetry'},{from:'monitor',to:'fn_event',label:'telemetry'},
+    ]
+  },
+
+  azureDataPlatform:{
+    platform:'azure',title:'Azure Enterprise Data Platform',
+    groups:[
+      {id:'g_src',label:'Data Sources',color:'#1a2a1a'},
+      {id:'g_ingest',label:'Ingestion Layer',color:'#00091a'},
+      {id:'g_lake',label:'Azure Data Lake (ADLS Gen2)',color:'#001020'},
+      {id:'g_process',label:'Processing & Transform',color:'#0d0020'},
+      {id:'g_serve',label:'Serving Layer',color:'#1a0a00'},
+      {id:'g_govern',label:'Governance & Orchestration',color:'#001a10'},
+    ],
+    nodes:[
+      {id:'onprem',label:'On-Premises\nSQL / Oracle',icon:'🏢',group:'g_src'},
+      {id:'saas',label:'SaaS Sources\nSalesforce / SAP',icon:'📡',group:'g_src'},
+      {id:'iot',label:'IoT Devices\nTelemetry Streams',icon:'📡',group:'g_src'},
+      {id:'datafactory',label:'Azure Data Factory\nETL Pipelines',icon:'🔁',color:'#0078d4',group:'g_ingest'},
+      {id:'eventhub',label:'Event Hubs\nStream Ingest',icon:'📨',color:'#0078d4',group:'g_ingest'},
+      {id:'adls_raw',label:'ADLS Gen2\nRaw Zone',icon:'☁',color:'#0078d4',group:'g_lake'},
+      {id:'adls_curated',label:'ADLS Gen2\nCurated Zone',icon:'☁',color:'#0078d4',group:'g_lake'},
+      {id:'adls_gold',label:'ADLS Gen2\nGold Zone',icon:'☁',color:'#0078d4',group:'g_lake'},
+      {id:'databricks',label:'Azure Databricks\nSpark Processing',icon:'⚙',color:'#0078d4',group:'g_process'},
+      {id:'stream_analytics',label:'Stream Analytics\nReal-time ETL',icon:'🔄',color:'#0078d4',group:'g_process'},
+      {id:'synapse',label:'Azure Synapse\nAnalytics DW',icon:'🗄',color:'#0078d4',group:'g_serve'},
+      {id:'powerbi',label:'Power BI\nDashboards',icon:'📊',color:'#0078d4',group:'g_serve'},
+      {id:'ml_studio',label:'Azure ML\nModel Training',icon:'🤖',color:'#0078d4',group:'g_serve'},
+      {id:'purview',label:'Microsoft Purview\nData Catalog',icon:'📋',color:'#0078d4',group:'g_govern'},
+      {id:'adf_monitor',label:'ADF Monitor\n& Alerts',icon:'📊',color:'#0078d4',group:'g_govern'},
+    ],
+    edges:[
+      {from:'onprem',to:'datafactory',label:'copy'},{from:'saas',to:'datafactory',label:'connector'},
+      {from:'iot',to:'eventhub',label:'stream'},{from:'datafactory',to:'adls_raw',label:'land'},
+      {from:'eventhub',to:'stream_analytics',label:'stream'},{from:'stream_analytics',to:'adls_raw',label:'write'},
+      {from:'adls_raw',to:'databricks',label:'process'},{from:'databricks',to:'adls_curated',label:'write'},
+      {from:'adls_curated',to:'databricks',label:'refine'},{from:'databricks',to:'adls_gold',label:'gold layer'},
+      {from:'adls_gold',to:'synapse',label:'load'},{from:'synapse',to:'powerbi',label:'query'},
+      {from:'synapse',to:'ml_studio',label:'train'},{from:'ml_studio',to:'powerbi',label:'insights'},
+      {from:'purview',to:'adls_raw',label:'scan'},{from:'purview',to:'synapse',label:'catalog'},
+      {from:'adf_monitor',to:'datafactory',label:'monitor'},
+    ]
+  },
+
+  azureDevSecOps:{
+    platform:'azure',title:'Azure DevSecOps Pipeline',
+    groups:[
+      {id:'g_dev',label:'Developer',color:'#1a2a1a'},
+      {id:'g_source',label:'Source & Planning',color:'#00091a'},
+      {id:'g_ci',label:'CI — Build & Test',color:'#001020'},
+      {id:'g_sec',label:'Security & Quality Gates',color:'#1a0000'},
+      {id:'g_registry',label:'Artifact Registry',color:'#0d0020'},
+      {id:'g_staging',label:'Deploy → Staging',color:'#001520'},
+      {id:'g_prod',label:'Deploy → Production',color:'#001a10'},
+      {id:'g_monitor',label:'Monitor & Feedback',color:'#1a1800'},
+    ],
+    nodes:[
+      {id:'dev',label:'Developer\nWorkstation',icon:'💻',group:'g_dev'},
+      {id:'azrepos',label:'Azure Repos\nGit',icon:'📦',color:'#0078d4',group:'g_source'},
+      {id:'azboards',label:'Azure Boards\nWork Items',icon:'📋',color:'#0078d4',group:'g_source'},
+      {id:'build',label:'Azure Pipelines\nBuild Agent',icon:'⚙',color:'#0078d4',group:'g_ci'},
+      {id:'unittest',label:'Unit Tests\n& Code Coverage',icon:'✅',color:'#0078d4',group:'g_ci'},
+      {id:'sonar',label:'SonarCloud\nSAST',icon:'🔍',color:'#f87171',group:'g_sec'},
+      {id:'defender',label:'Microsoft Defender\nContainer Scan',icon:'🛡',color:'#f87171',group:'g_sec'},
+      {id:'checkov',label:'Checkov\nIaC Scan',icon:'🔐',color:'#f87171',group:'g_sec'},
+      {id:'acr',label:'Azure Container\nRegistry (ACR)',icon:'📦',color:'#0078d4',group:'g_registry'},
+      {id:'stg_aks',label:'AKS Staging\nCluster',icon:'⎈',color:'#0078d4',group:'g_staging'},
+      {id:'int_test',label:'Integration &\nSmoke Tests',icon:'🧪',color:'#0078d4',group:'g_staging'},
+      {id:'approval',label:'Manual Approval\nGate',icon:'✋',color:'#fbbf24',group:'g_prod'},
+      {id:'prod_aks',label:'AKS Production\nCluster',icon:'⎈',color:'#0078d4',group:'g_prod'},
+      {id:'appinsights',label:'App Insights\nLive Monitoring',icon:'📊',color:'#0078d4',group:'g_monitor'},
+      {id:'alerts',label:'Azure Alerts\n& Teams Notify',icon:'🔔',color:'#0078d4',group:'g_monitor'},
+    ],
+    edges:[
+      {from:'dev',to:'azrepos',label:'git push'},{from:'azboards',to:'azrepos',label:'branch policy'},
+      {from:'azrepos',to:'build',label:'trigger'},{from:'build',to:'unittest',label:'run'},
+      {from:'build',to:'sonar',label:'SAST'},{from:'build',to:'checkov',label:'IaC scan'},
+      {from:'build',to:'defender',label:'image scan'},{from:'defender',to:'acr',label:'push image'},
+      {from:'acr',to:'stg_aks',label:'pull & deploy'},{from:'stg_aks',to:'int_test',label:''},
+      {from:'int_test',to:'approval',label:'pass'},{from:'approval',to:'prod_aks',label:'approved'},
+      {from:'prod_aks',to:'appinsights',label:'telemetry'},{from:'appinsights',to:'alerts',label:'threshold'},
+      {from:'alerts',to:'azboards',label:'create incident'},
+    ]
+  },
+
+  // ── KUBERNETES TEMPLATES ──────────────────────────────
+  k8sRbacSecurity:{
+    platform:'k8s',title:'Kubernetes RBAC & Security Architecture',
+    groups:[
+      {id:'g_users',label:'Users & Service Accounts',color:'#1a2a1a'},
+      {id:'g_authn',label:'Authentication Layer',color:'#00051a'},
+      {id:'g_authz',label:'Authorization (RBAC)',color:'#0d0020'},
+      {id:'g_psa',label:'Pod Security & Admission',color:'#1a0000'},
+      {id:'g_workload',label:'Workloads',color:'#001020'},
+      {id:'g_secrets',label:'Secrets Management',color:'#1a0a00'},
+      {id:'g_audit',label:'Audit & Compliance',color:'#1a1800'},
+    ],
+    nodes:[
+      {id:'human_user',label:'Human User\n(kubectl)',icon:'👤',group:'g_users'},
+      {id:'ci_sa',label:'CI/CD\nService Account',icon:'🔁',group:'g_users'},
+      {id:'pod_sa',label:'Pod Service\nAccount',icon:'⎈',color:'#326ce5',group:'g_users'},
+      {id:'oidc',label:'OIDC Provider\n(Dex / Okta)',icon:'🔐',color:'#326ce5',group:'g_authn'},
+      {id:'apiserver',label:'API Server\nkube-apiserver',icon:'⎈',color:'#326ce5',group:'g_authn'},
+      {id:'rbac',label:'RBAC\nClusterRole / Role',icon:'🔑',color:'#326ce5',group:'g_authz'},
+      {id:'clusterrb',label:'ClusterRoleBinding\n/ RoleBinding',icon:'🔗',color:'#326ce5',group:'g_authz'},
+      {id:'psa',label:'Pod Security\nAdmission (PSA)',icon:'🛡',color:'#326ce5',group:'g_psa'},
+      {id:'opa',label:'OPA Gatekeeper\nPolicy Engine',icon:'⚖',color:'#326ce5',group:'g_psa'},
+      {id:'netpol',label:'NetworkPolicy\nL3/L4 Isolation',icon:'🌐',color:'#326ce5',group:'g_psa'},
+      {id:'app_pod',label:'Application\nPod',icon:'⎈',color:'#326ce5',group:'g_workload'},
+      {id:'priv_pod',label:'Privileged\nPod (restricted)',icon:'⎈',color:'#f87171',group:'g_workload'},
+      {id:'vault',label:'HashiCorp Vault\nSecrets Injection',icon:'🔐',color:'#f87171',group:'g_secrets'},
+      {id:'sealed',label:'Sealed Secrets\nEncrypted CRD',icon:'🔒',color:'#326ce5',group:'g_secrets'},
+      {id:'audit_log',label:'Audit Logs\nAPI Server Events',icon:'📋',color:'#326ce5',group:'g_audit'},
+      {id:'falco',label:'Falco\nRuntime Security',icon:'🚨',color:'#f87171',group:'g_audit'},
+    ],
+    edges:[
+      {from:'human_user',to:'oidc',label:'OIDC login'},{from:'oidc',to:'apiserver',label:'JWT token'},
+      {from:'ci_sa',to:'apiserver',label:'kubeconfig'},{from:'apiserver',to:'rbac',label:'check'},
+      {from:'rbac',to:'clusterrb',label:'binds'},{from:'clusterrb',to:'pod_sa',label:'grants'},
+      {from:'apiserver',to:'psa',label:'admission'},{from:'apiserver',to:'opa',label:'webhook'},
+      {from:'psa',to:'priv_pod',label:'block'},{from:'opa',to:'app_pod',label:'allow'},
+      {from:'netpol',to:'app_pod',label:'isolate'},{from:'vault',to:'app_pod',label:'inject secrets'},
+      {from:'sealed',to:'app_pod',label:'decrypt'},{from:'apiserver',to:'audit_log',label:'every request'},
+      {from:'falco',to:'app_pod',label:'watch syscalls'},
+    ]
+  },
+
+  k8sMultiTenant:{
+    platform:'k8s',title:'Kubernetes Multi-Tenant Platform',
+    groups:[
+      {id:'g_cluster',label:'Cluster Infrastructure',color:'#00051a'},
+      {id:'g_platform',label:'Platform Layer',color:'#001020'},
+      {id:'g_tenant_a',label:'Tenant A — Namespace',color:'#001a10'},
+      {id:'g_tenant_b',label:'Tenant B — Namespace',color:'#1a0a00'},
+      {id:'g_tenant_c',label:'Tenant C — Namespace',color:'#0d0020'},
+      {id:'g_shared',label:'Shared Services',color:'#1a1800'},
+    ],
+    nodes:[
+      {id:'controlplane',label:'Control Plane\nkube-apiserver',icon:'⎈',color:'#326ce5',group:'g_cluster'},
+      {id:'nodes',label:'Worker Nodes\n(Node Pool)',icon:'💻',color:'#326ce5',group:'g_cluster'},
+      {id:'ingress',label:'Ingress Controller\nNGINX (shared)',icon:'⎈',color:'#326ce5',group:'g_platform'},
+      {id:'certmgr',label:'cert-manager\nTLS Automation',icon:'📜',color:'#326ce5',group:'g_platform'},
+      {id:'argo',label:'ArgoCD\nGitOps Operator',icon:'🔁',color:'#10b981',group:'g_platform'},
+      {id:'hpa',label:'HPA / KEDA\nAutoscaling',icon:'⚖',color:'#326ce5',group:'g_platform'},
+      {id:'a_deploy',label:'Deployment A\n(3 replicas)',icon:'⎈',color:'#326ce5',group:'g_tenant_a'},
+      {id:'a_svc',label:'Service A\nClusterIP',icon:'⎈',color:'#326ce5',group:'g_tenant_a'},
+      {id:'a_db',label:'PVC / StatefulSet\nPostgreSQL A',icon:'🗄',color:'#326ce5',group:'g_tenant_a'},
+      {id:'b_deploy',label:'Deployment B\n(2 replicas)',icon:'⎈',color:'#326ce5',group:'g_tenant_b'},
+      {id:'b_svc',label:'Service B\nClusterIP',icon:'⎈',color:'#326ce5',group:'g_tenant_b'},
+      {id:'b_db',label:'PVC / StatefulSet\nMongoDB B',icon:'🗄',color:'#326ce5',group:'g_tenant_b'},
+      {id:'c_deploy',label:'Deployment C\n(1 replica)',icon:'⎈',color:'#326ce5',group:'g_tenant_c'},
+      {id:'c_svc',label:'Service C\nClusterIP',icon:'⎈',color:'#326ce5',group:'g_tenant_c'},
+      {id:'prometheus',label:'Prometheus\nMulti-tenant',icon:'📊',color:'#10b981',group:'g_shared'},
+      {id:'loki',label:'Loki\nLog Aggregation',icon:'📋',color:'#10b981',group:'g_shared'},
+    ],
+    edges:[
+      {from:'controlplane',to:'nodes',label:'schedule'},{from:'ingress',to:'a_svc',label:'route /a'},
+      {from:'ingress',to:'b_svc',label:'route /b'},{from:'ingress',to:'c_svc',label:'route /c'},
+      {from:'certmgr',to:'ingress',label:'TLS cert'},{from:'argo',to:'a_deploy',label:'sync'},
+      {from:'argo',to:'b_deploy',label:'sync'},{from:'argo',to:'c_deploy',label:'sync'},
+      {from:'hpa',to:'a_deploy',label:'scale'},{from:'hpa',to:'b_deploy',label:'scale'},
+      {from:'a_svc',to:'a_deploy',label:''},{from:'a_deploy',to:'a_db',label:'PVC'},
+      {from:'b_svc',to:'b_deploy',label:''},{from:'b_deploy',to:'b_db',label:'PVC'},
+      {from:'c_svc',to:'c_deploy',label:''},{from:'prometheus',to:'a_deploy',label:'scrape'},
+      {from:'prometheus',to:'b_deploy',label:'scrape'},{from:'loki',to:'a_deploy',label:'logs'},
+    ]
+  },
+
+  k8sNetworking:{
+    platform:'k8s',title:'Kubernetes Networking Deep Dive',
+    groups:[
+      {id:'g_external',label:'External Traffic',color:'#1a2a1a'},
+      {id:'g_ingress',label:'Ingress Layer',color:'#00051a'},
+      {id:'g_svcmesh',label:'Service Mesh (Cilium / Istio)',color:'#001020'},
+      {id:'g_pods',label:'Pod Network',color:'#0d0020'},
+      {id:'g_policy',label:'Network Policy',color:'#1a0000'},
+      {id:'g_dns',label:'DNS & Discovery',color:'#1a1800'},
+    ],
+    nodes:[
+      {id:'inet',label:'Internet\nUsers',icon:'🌐',group:'g_external'},
+      {id:'loadbalancer',label:'LoadBalancer\nService (Cloud LB)',icon:'☁',color:'#326ce5',group:'g_external'},
+      {id:'nodeport',label:'NodePort\nService',icon:'⎈',color:'#326ce5',group:'g_ingress'},
+      {id:'nginx_ing',label:'NGINX Ingress\nController Pod',icon:'⎈',color:'#326ce5',group:'g_ingress'},
+      {id:'gateway_api',label:'Gateway API\nHTTPRoute',icon:'🔀',color:'#326ce5',group:'g_ingress'},
+      {id:'cilium',label:'Cilium CNI\neBPF Dataplane',icon:'🌐',color:'#326ce5',group:'g_svcmesh'},
+      {id:'envoy',label:'Envoy Sidecar\nProxy',icon:'🔀',color:'#326ce5',group:'g_svcmesh'},
+      {id:'mtls',label:'mTLS\nEncryption',icon:'🔒',color:'#326ce5',group:'g_svcmesh'},
+      {id:'pod_a',label:'Pod A\n10.244.1.x',icon:'⎈',color:'#326ce5',group:'g_pods'},
+      {id:'pod_b',label:'Pod B\n10.244.2.x',icon:'⎈',color:'#326ce5',group:'g_pods'},
+      {id:'pod_c',label:'Pod C\n10.244.3.x',icon:'⎈',color:'#326ce5',group:'g_pods'},
+      {id:'clusterip',label:'ClusterIP\nService (kube-proxy)',icon:'⎈',color:'#326ce5',group:'g_pods'},
+      {id:'netpol_ingress',label:'NetworkPolicy\nIngress Rules',icon:'🛡',color:'#f87171',group:'g_policy'},
+      {id:'netpol_egress',label:'NetworkPolicy\nEgress Rules',icon:'🛡',color:'#f87171',group:'g_policy'},
+      {id:'coredns',label:'CoreDNS\nCluster DNS',icon:'🔍',color:'#326ce5',group:'g_dns'},
+      {id:'service_disc',label:'Service Discovery\nkube-dns FQDN',icon:'🔍',color:'#326ce5',group:'g_dns'},
+    ],
+    edges:[
+      {from:'inet',to:'loadbalancer',label:'TCP/UDP'},{from:'loadbalancer',to:'nodeport',label:''},
+      {from:'nodeport',to:'nginx_ing',label:''},{from:'nginx_ing',to:'gateway_api',label:'L7 route'},
+      {from:'gateway_api',to:'clusterip',label:'match rule'},{from:'clusterip',to:'pod_a',label:'iptables'},
+      {from:'clusterip',to:'pod_b',label:'iptables'},{from:'cilium',to:'pod_a',label:'eBPF'},
+      {from:'cilium',to:'pod_b',label:'eBPF'},{from:'envoy',to:'mtls',label:''},
+      {from:'mtls',to:'pod_c',label:'encrypted'},{from:'pod_a',to:'pod_b',label:'E-W traffic'},
+      {from:'netpol_ingress',to:'pod_a',label:'allow/deny'},{from:'netpol_egress',to:'pod_b',label:'allow/deny'},
+      {from:'coredns',to:'service_disc',label:''},{from:'pod_a',to:'coredns',label:'DNS lookup'},
+    ]
+  },
+
+  k8sStatefulWorkloads:{
+    platform:'k8s',title:'Kubernetes Stateful Workloads & Storage',
+    groups:[
+      {id:'g_ops',label:'Platform Operators',color:'#00051a'},
+      {id:'g_stateful',label:'StatefulSets',color:'#001020'},
+      {id:'g_storage',label:'Storage Layer',color:'#1a0a00'},
+      {id:'g_backup',label:'Backup & DR',color:'#0d0020'},
+      {id:'g_monitor',label:'Monitoring',color:'#001a10'},
+    ],
+    nodes:[
+      {id:'pg_operator',label:'Postgres Operator\n(CloudNativePG)',icon:'⎈',color:'#326ce5',group:'g_ops'},
+      {id:'redis_operator',label:'Redis Operator\n(Redis Enterprise)',icon:'⎈',color:'#326ce5',group:'g_ops'},
+      {id:'kafka_operator',label:'Strimzi Operator\nKafka',icon:'⎈',color:'#326ce5',group:'g_ops'},
+      {id:'pg_primary',label:'PostgreSQL\nPrimary Pod',icon:'🗄',color:'#326ce5',group:'g_stateful'},
+      {id:'pg_replica',label:'PostgreSQL\nReplica Pod ×2',icon:'🗄',color:'#326ce5',group:'g_stateful'},
+      {id:'redis_master',label:'Redis\nMaster Pod',icon:'⚡',color:'#326ce5',group:'g_stateful'},
+      {id:'redis_replica',label:'Redis\nReplica Pods ×2',icon:'⚡',color:'#326ce5',group:'g_stateful'},
+      {id:'kafka_broker',label:'Kafka\nBroker Pods ×3',icon:'📨',color:'#326ce5',group:'g_stateful'},
+      {id:'zookeeper',label:'ZooKeeper\nPods ×3',icon:'⎈',color:'#326ce5',group:'g_stateful'},
+      {id:'pvc_pg',label:'PVC — PostgreSQL\n(gp3, 100Gi)',icon:'💾',color:'#326ce5',group:'g_storage'},
+      {id:'pvc_kafka',label:'PVC — Kafka\n(gp3, 500Gi)',icon:'💾',color:'#326ce5',group:'g_storage'},
+      {id:'storageclass',label:'StorageClass\n(CSI Driver)',icon:'💾',color:'#326ce5',group:'g_storage'},
+      {id:'velero',label:'Velero\nBackup Operator',icon:'☁',color:'#10b981',group:'g_backup'},
+      {id:'s3_backup',label:'S3 / GCS\nBackup Bucket',icon:'☁',color:'#10b981',group:'g_backup'},
+      {id:'prometheus',label:'Prometheus\n+ Postgres Exporter',icon:'📊',color:'#10b981',group:'g_monitor'},
+    ],
+    edges:[
+      {from:'pg_operator',to:'pg_primary',label:'manages'},{from:'pg_operator',to:'pg_replica',label:'manages'},
+      {from:'redis_operator',to:'redis_master',label:'manages'},{from:'redis_operator',to:'redis_replica',label:'manages'},
+      {from:'kafka_operator',to:'kafka_broker',label:'manages'},{from:'kafka_operator',to:'zookeeper',label:'manages'},
+      {from:'pg_primary',to:'pg_replica',label:'streaming replication'},
+      {from:'redis_master',to:'redis_replica',label:'async replication'},
+      {from:'kafka_broker',to:'zookeeper',label:'quorum'},{from:'pg_primary',to:'pvc_pg',label:'mount'},
+      {from:'kafka_broker',to:'pvc_kafka',label:'mount'},{from:'pvc_pg',to:'storageclass',label:'provision'},
+      {from:'pvc_kafka',to:'storageclass',label:'provision'},{from:'velero',to:'pg_primary',label:'snapshot'},
+      {from:'velero',to:'s3_backup',label:'upload'},{from:'prometheus',to:'pg_primary',label:'scrape'},
+      {from:'prometheus',to:'kafka_broker',label:'scrape'},
+    ]
   }
 };
 
@@ -1659,7 +2271,15 @@ function renderData(data, title, method) {
   document.getElementById('empty').style.display = 'none';
   document.getElementById('loading').style.display = 'none';
   document.getElementById('diag-wrap').style.display = 'block';
-  ['btn-svg','btn-png','btn-copy','btn-sbs','btn-blast'].forEach(id=>{ document.getElementById(id).disabled = false; });
+  ['btn-svg','btn-png','btn-copy','btn-sbs','btn-blast','btn-expand'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = false; });
+  // Show minimap toggle
+  document.getElementById('minimap-toggle').classList.add('visible');
+  if (minimapVisible) setTimeout(renderMinimap, 100);
+  // Refresh sequence if visible
+  const seqView = document.getElementById('view-sequence');
+  if (seqView && seqView.style.display !== 'none') {
+    document.getElementById('seq-out').innerHTML = renderSequenceDiagram(data);
+  }
   // Reset step-by-step if open
   if (document.getElementById('sbsbar').classList.contains('open')) {
     sbsLayers = buildSBSLayers(data);
@@ -1667,7 +2287,7 @@ function renderData(data, title, method) {
     renderSBSChips();
     sbsRender();
   }
-  // Re-attach blast handlers
+  // Re-attach blast/expand handlers
   attachNodeClickHandlers();
 }
 
@@ -1676,12 +2296,18 @@ function clearCanvas() {
   document.getElementById('diag-wrap').style.display = 'none';
   document.getElementById('empty').style.display = 'flex';
   document.getElementById('diag-title').innerHTML = '// select a template or describe your architecture';
-  ['btn-svg','btn-png','btn-copy','btn-sbs','btn-blast'].forEach(id=>{ document.getElementById(id).disabled = true; });
-  // Close SBS panel if open
+  ['btn-svg','btn-png','btn-copy','btn-sbs','btn-blast','btn-expand'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = true; });
+  document.getElementById('minimap-toggle').classList.remove('visible');
+  document.getElementById('minimap').classList.remove('visible');
+  minimapVisible = false;
+  document.getElementById('minimap-toggle').classList.remove('active');
+  document.getElementById('minimap-toggle').textContent = '⊞ Map';
   document.getElementById('sbsbar').classList.remove('open');
   sbsStop();
-  // Reset blast
   if (blastModeActive) toggleBlastMode();
+  if (expandModeActive) toggleExpandMode();
+  closeNodeModalDirect();
+  switchView('diagram');
   hideErr();
 }
 
@@ -1757,6 +2383,7 @@ function renderSVG(data) {
 
   // Store positions globally for blast radius hit-testing
   window._lastPositions = positions;
+  window._lastGroupRects = groupRects;
 
   // Theme-aware colors
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
@@ -1887,13 +2514,352 @@ function generateDSL(data, title, plat) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  VIEW CONTROLS
+//  SEQUENCE DIAGRAM
 // ═══════════════════════════════════════════════════════
+function renderSequenceDiagram(data) {
+  if (!data) return '<p style="color:var(--text3);font-family:\'JetBrains Mono\',monospace;font-size:11px;padding:2rem">Generate a diagram first, then switch to Sequence view.</p>';
+  const nodes = data.nodes || [];
+  const edges = data.edges || [];
+  if (!nodes.length) return '';
+
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const C = {
+    bg:       isLight ? '#ffffff' : '#0f1117',
+    surface:  isLight ? '#f8faff' : '#161b25',
+    border:   isLight ? '#d0d6e8' : '#252c3f',
+    text1:    isLight ? '#1a1f35' : '#e4e8f4',
+    text2:    isLight ? '#4a5570' : '#8892b0',
+    text3:    isLight ? '#8892b0' : '#4a5470',
+    accent:   isLight ? '#16a34a' : '#4ade80',
+    life:     isLight ? '#d0d6e8' : '#252c3f',
+  };
+
+  // Pick up to 8 nodes as actors (trim to keep diagram readable)
+  const actors = nodes.slice(0, 8);
+  const COL_W = 150, HEADER_H = 70, ROW_H = 44, PADDING = 30;
+  const W = actors.length * COL_W + PADDING * 2;
+  const totalRows = Math.max(edges.length, 4);
+  const H = HEADER_H + totalRows * ROW_H + PADDING * 2;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="seq-svg" style="width:100%;min-width:${W}px;height:auto;font-family:'JetBrains Mono',monospace;">`;
+  svg += `<rect width="${W}" height="${H}" fill="${C.bg}" rx="10"/>`;
+
+  // Actor columns
+  const actorX = {};
+  actors.forEach((a, i) => {
+    const x = PADDING + i * COL_W + COL_W / 2;
+    actorX[a.id] = x;
+    // Header box
+    svg += `<rect x="${x-52}" y="12" width="104" height="46" rx="8" fill="${C.surface}" stroke="${a.color||C.border}" stroke-width="1.3"/>`;
+    svg += `<rect x="${x-52}" y="12" width="104" height="4" rx="6" fill="${a.color||C.border}" opacity="0.85"/>`;
+    if (a.icon) svg += `<text x="${x-32}" y="40" font-size="14" text-anchor="middle">${a.icon}</text>`;
+    const label = (a.label||a.id).split('\n')[0];
+    svg += `<text x="${x+6}" y="35" text-anchor="middle" font-size="9" fill="${C.text1}" font-weight="500">${escX(label.length>14?label.slice(0,13)+'…':label)}</text>`;
+    const sub = (a.label||'').split('\n')[1]||'';
+    if(sub) svg += `<text x="${x+6}" y="47" text-anchor="middle" font-size="7.5" fill="${C.text2}">${escX(sub.length>16?sub.slice(0,15)+'…':sub)}</text>`;
+    // Lifeline
+    svg += `<line x1="${x}" y1="58" x2="${x}" y2="${H-PADDING}" stroke="${C.life}" stroke-width="1" stroke-dasharray="5 3"/>`;
+    // Bottom actor box
+    svg += `<rect x="${x-52}" y="${H-PADDING-46}" width="104" height="34" rx="7" fill="${C.surface}" stroke="${a.color||C.border}" stroke-width="1"/>`;
+    svg += `<text x="${x+6}" y="${H-PADDING-26}" text-anchor="middle" font-size="9" fill="${C.text1}">${escX(label.length>14?label.slice(0,13)+'…':label)}</text>`;
+  });
+
+  // Messages (edges mapped to sequence steps)
+  edges.forEach((e, i) => {
+    const y = HEADER_H + PADDING + i * ROW_H;
+    const sx = actorX[e.from], tx = actorX[e.to];
+    if (sx === undefined || tx === undefined) return;
+    const isReturn = e.label && /return|response|reply|result|callback/i.test(e.label);
+    const isSelf = e.from === e.to;
+    const stroke = isReturn ? C.text3 : C.accent;
+    const dash = isReturn ? 'stroke-dasharray="6 3"' : '';
+
+    if (isSelf) {
+      // Self-call loop
+      svg += `<path d="M${sx} ${y} Q${sx+60} ${y} ${sx+60} ${y+16} Q${sx+60} ${y+30} ${sx} ${y+30}" fill="none" stroke="${stroke}" stroke-width="1.3" ${dash}/>`;
+      svg += `<polygon points="${sx},${y+30} ${sx-5},${y+24} ${sx+5},${y+24}" fill="${stroke}"/>`;
+      if(e.label) svg += `<text x="${sx+65}" y="${y+18}" font-size="8.5" fill="${C.text2}">${escX(e.label)}</text>`;
+    } else {
+      const dir = tx > sx ? 1 : -1;
+      const x2 = tx - dir * 10;
+      svg += `<line x1="${sx}" y1="${y}" x2="${x2}" y2="${y}" stroke="${stroke}" stroke-width="1.3" ${dash}/>`;
+      svg += `<polygon points="${tx-(dir*10)},${y} ${tx-(dir*18)},${y-4} ${tx-(dir*18)},${y+4}" fill="${stroke}"/>`;
+      const mx = (sx + tx) / 2;
+      // Label background
+      const lbl = e.label || '';
+      if (lbl) {
+        svg += `<rect x="${mx-28}" y="${y-13}" width="56" height="12" rx="3" fill="${C.bg}" opacity="0.9"/>`;
+        svg += `<text x="${mx}" y="${y-4}" text-anchor="middle" font-size="8" fill="${isReturn?C.text3:C.text2}">${escX(lbl.length>14?lbl.slice(0,13)+'…':lbl)}</text>`;
+      }
+      // Step number
+      svg += `<text x="10" y="${y+4}" font-size="8" fill="${C.text3}">${i+1}</text>`;
+    }
+    // Activation box on target lifeline
+    if (!isSelf) svg += `<rect x="${tx-5}" y="${y-2}" width="10" height="20" rx="2" fill="${C.accent}" opacity="0.2"/>`;
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ═══════════════════════════════════════════════════════
+//  NODE EXPAND MODAL
+// ═══════════════════════════════════════════════════════
+let expandModeActive = false;
+
+function toggleExpandMode() {
+  expandModeActive = !expandModeActive;
+  const btn = document.getElementById('btn-expand');
+  const hint = document.getElementById('expand-hint');
+  if (expandModeActive) {
+    btn.style.borderColor = 'var(--accent2)';
+    btn.style.color = 'var(--accent2)';
+    btn.style.background = 'rgba(34,211,238,0.08)';
+    hint.style.display = 'inline-flex';
+  } else {
+    btn.style.borderColor = '';
+    btn.style.color = '';
+    btn.style.background = '';
+    hint.style.display = 'none';
+    closeNodeModalDirect();
+  }
+  // Re-wire SVG handlers
+  attachNodeClickHandlers();
+}
+
+function openNodeModal(nodeId) {
+  if (!currentData) return;
+  const node = (currentData.nodes||[]).find(n => n.id === nodeId);
+  if (!node) return;
+
+  const label = (node.label||nodeId).replace(/\n/g,' ');
+  document.getElementById('nm-icon').textContent = node.icon || '⬡';
+  document.getElementById('nm-title').textContent = label;
+  document.getElementById('nm-hint').style.display = 'none';
+  document.getElementById('nm-desc').style.display = 'none';
+  document.getElementById('nm-loading').style.display = 'none';
+
+  // Connections
+  const edges = currentData.edges || [];
+  const nodeMap = {};
+  (currentData.nodes||[]).forEach(n => nodeMap[n.id] = n);
+
+  const incoming = edges.filter(e => e.to === nodeId);
+  const outgoing = edges.filter(e => e.from === nodeId);
+
+  const inSec = document.getElementById('nm-connections');
+  const outSec = document.getElementById('nm-connections-out');
+  const inDiv = document.getElementById('nm-in');
+  const outDiv = document.getElementById('nm-out');
+
+  if (incoming.length) {
+    inDiv.innerHTML = incoming.map(e => {
+      const src = nodeMap[e.from];
+      const lbl = src ? (src.label||e.from).replace(/\n/g,' ') : e.from;
+      const edge = e.label ? ` [${e.label}]` : '';
+      return `<span class="node-modal-chip in">← ${escHtml(lbl)}${escHtml(edge)}</span>`;
+    }).join('');
+    inSec.style.display = 'flex';
+  } else { inSec.style.display = 'none'; }
+
+  if (outgoing.length) {
+    outDiv.innerHTML = outgoing.map(e => {
+      const tgt = nodeMap[e.to];
+      const lbl = tgt ? (tgt.label||e.to).replace(/\n/g,' ') : e.to;
+      const edge = e.label ? ` [${e.label}]` : '';
+      return `<span class="node-modal-chip out">→ ${escHtml(lbl)}${escHtml(edge)}</span>`;
+    }).join('');
+    outSec.style.display = 'flex';
+  } else { outSec.style.display = 'none'; }
+
+  // Group
+  const grpSec = document.getElementById('nm-group-sec');
+  const grpDiv = document.getElementById('nm-group');
+  if (node.group) {
+    const grp = (currentData.groups||[]).find(g => g.id === node.group);
+    grpDiv.innerHTML = `<span class="node-modal-chip">${escHtml(grp ? grp.label : node.group)}</span>`;
+    grpSec.style.display = 'flex';
+  } else { grpSec.style.display = 'none'; }
+
+  document.getElementById('node-modal-backdrop').classList.add('open');
+
+  // Try AI explanation if key available
+  const key = getKey();
+  if (key && !key.startsWith('••')) {
+    fetchNodeExplanation(node, label, incoming, outgoing, nodeMap);
+  } else {
+    // Offline: show a concise static description
+    const desc = buildStaticDesc(node, label, incoming, outgoing, nodeMap);
+    document.getElementById('nm-desc').textContent = desc;
+    document.getElementById('nm-desc').style.display = 'block';
+  }
+}
+
+function buildStaticDesc(node, label, incoming, outgoing, nodeMap) {
+  const inNames = incoming.map(e => (nodeMap[e.from]?.label||e.from).replace(/\n/g,' ')).join(', ');
+  const outNames = outgoing.map(e => (nodeMap[e.to]?.label||e.to).replace(/\n/g,' ')).join(', ');
+  let desc = `${label} is a component in this architecture.`;
+  if (inNames) desc += ` It receives input from: ${inNames}.`;
+  if (outNames) desc += ` It sends output to: ${outNames}.`;
+  if (!incoming.length && !outgoing.length) desc += ' It operates independently with no direct connections shown.';
+  return desc;
+}
+
+async function fetchNodeExplanation(node, label, incoming, outgoing, nodeMap) {
+  document.getElementById('nm-loading').style.display = 'flex';
+  document.getElementById('nm-desc').style.display = 'none';
+  try {
+    const key = getKey();
+    const inNames = incoming.map(e => (nodeMap[e.from]?.label||e.from).replace(/\n/g,' ')).slice(0,4).join(', ');
+    const outNames = outgoing.map(e => (nodeMap[e.to]?.label||e.to).replace(/\n/g,' ')).slice(0,4).join(', ');
+    const prompt = `In a ${currentTitle} architecture diagram, explain the role of "${label}" in 2-3 concise sentences. ${inNames?'It receives from: '+inNames+'.':''} ${outNames?'It sends to: '+outNames+'.':''} Be specific and technical. No bullet points.`;
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:prompt}]})
+    });
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || buildStaticDesc(node, label, incoming, outgoing, nodeMap);
+    document.getElementById('nm-desc').textContent = text;
+    document.getElementById('nm-desc').style.display = 'block';
+  } catch(_) {
+    document.getElementById('nm-desc').textContent = buildStaticDesc(node, label, incoming, outgoing, nodeMap);
+    document.getElementById('nm-desc').style.display = 'block';
+  }
+  document.getElementById('nm-loading').style.display = 'none';
+}
+
+function closeNodeModal(e) {
+  if (e.target === document.getElementById('node-modal-backdrop')) closeNodeModalDirect();
+}
+function closeNodeModalDirect() {
+  document.getElementById('node-modal-backdrop').classList.remove('open');
+}
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ═══════════════════════════════════════════════════════
+//  MINIMAP
+// ═══════════════════════════════════════════════════════
+let minimapVisible = false;
+
+function toggleMinimap() {
+  minimapVisible = !minimapVisible;
+  document.getElementById('minimap').classList.toggle('visible', minimapVisible);
+  const btn = document.getElementById('minimap-toggle');
+  btn.classList.toggle('active', minimapVisible);
+  btn.textContent = minimapVisible ? '⊟ Map' : '⊞ Map';
+  if (minimapVisible) renderMinimap();
+}
+
+function renderMinimap() {
+  const svg = document.querySelector('#diag-out svg');
+  const wrap = document.getElementById('diag-wrap');
+  const canvas = document.getElementById('minimap-canvas');
+  const vp = document.getElementById('minimap-vp');
+  if (!svg || !canvas) return;
+
+  const mm = document.getElementById('minimap');
+  const mmW = mm.offsetWidth, mmH = mm.offsetHeight;
+  canvas.width = mmW * 2; canvas.height = mmH * 2;
+  canvas.style.width = mmW+'px'; canvas.style.height = mmH+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  ctx.fillStyle = isLight ? '#f0f2f7' : '#0f1117';
+  ctx.fillRect(0, 0, mmW, mmH);
+
+  const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+  const svgW = vb[2], svgH = vb[3];
+  const scale = Math.min(mmW / svgW, mmH / svgH) * 0.92;
+  const ox = (mmW - svgW * scale) / 2;
+  const oy = (mmH - svgH * scale) / 2;
+
+  // Draw group rects
+  const positions = window._lastPositions || {};
+  if (currentData?.groups && window._lastGroupRects) {
+    Object.entries(window._lastGroupRects).forEach(([gid, r]) => {
+      const grp = (currentData.groups||[]).find(g => g.id === gid);
+      ctx.fillStyle = grp?.color || '#1a1a2e';
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.roundRect(ox + r.x*scale, oy + r.y*scale, r.w*scale, r.h*scale, 3);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  // Draw edges
+  ctx.strokeStyle = isLight ? '#16a34a' : '#4ade80';
+  ctx.globalAlpha = 0.35;
+  ctx.lineWidth = 0.7;
+  const NW = 124, NH = 64;
+  (currentData?.edges||[]).forEach(e => {
+    const s = positions[e.from], t = positions[e.to];
+    if (!s || !t) return;
+    ctx.beginPath();
+    ctx.moveTo(ox + s.x*scale, oy + s.y*scale);
+    ctx.lineTo(ox + t.x*scale, oy + t.y*scale);
+    ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
+
+  // Draw nodes
+  Object.entries(positions).forEach(([id, p]) => {
+    const node = (currentData?.nodes||[]).find(n => n.id === id);
+    const col = node?.color || '#333d57';
+    ctx.fillStyle = isLight ? '#ffffff' : '#1c2235';
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1;
+    const nw = NW*scale, nh = NH*scale;
+    ctx.beginPath();
+    ctx.roundRect(ox + (p.x - NW/2)*scale, oy + (p.y - NH/2)*scale, nw, nh, 3);
+    ctx.fill();
+    ctx.stroke();
+  });
+
+  // Viewport indicator
+  const scrollLeft = wrap.scrollLeft, scrollTop = wrap.scrollTop;
+  const visW = wrap.clientWidth, visH = wrap.clientHeight;
+  const totalW = wrap.scrollWidth, totalH = wrap.scrollHeight;
+  const vpX = ox + (scrollLeft / totalW) * svgW * scale;
+  const vpY = oy + (scrollTop / totalH) * svgH * scale;
+  const vpW = (visW / totalW) * svgW * scale;
+  const vpH = (visH / totalH) * svgH * scale;
+  vp.style.left = vpX + 'px';
+  vp.style.top = vpY + 'px';
+  vp.style.width = Math.max(vpW, 16) + 'px';
+  vp.style.height = Math.max(vpH, 10) + 'px';
+}
+
+// Update minimap viewport on scroll
+function initMinimapScroll() {
+  const wrap = document.getElementById('diag-wrap');
+  wrap.addEventListener('scroll', () => { if (minimapVisible) renderMinimap(); });
+}
+
+// Click minimap to scroll diagram
+document.getElementById && (() => {
+  // deferred to DOMContentLoaded
+})();
 function switchView(v) {
-  const vd=document.getElementById('view-diagram'), vc=document.getElementById('view-code');
-  const td=document.getElementById('tab-d'), tc=document.getElementById('tab-c');
-  if(v==='diagram'){vd.style.display='flex';vc.style.display='none';td.classList.add('active');tc.classList.remove('active');}
-  else{vd.style.display='none';vc.style.display='block';td.classList.remove('active');tc.classList.add('active');}
+  const vd=document.getElementById('view-diagram');
+  const vs=document.getElementById('view-sequence');
+  const vc=document.getElementById('view-code');
+  const td=document.getElementById('tab-d');
+  const ts=document.getElementById('tab-s');
+  const tc=document.getElementById('tab-c');
+  vd.style.display='none'; vs.style.display='none'; vc.style.display='none';
+  td.classList.remove('active'); ts.classList.remove('active'); tc.classList.remove('active');
+  if (v==='diagram') {
+    vd.style.display='flex'; td.classList.add('active');
+    if (minimapVisible) setTimeout(renderMinimap, 50);
+  } else if (v==='sequence') {
+    vs.style.display='flex'; ts.classList.add('active');
+    document.getElementById('seq-out').innerHTML = renderSequenceDiagram(currentData);
+  } else {
+    vc.style.display='block'; tc.classList.add('active');
+  }
 }
 
 function zoomFit() { const w=document.getElementById('diag-wrap'); if(w){w.scrollTop=0;w.scrollLeft=0;} }
