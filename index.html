@@ -667,7 +667,7 @@ textarea::placeholder { color:var(--text3); }
   <div class="header-right">
     <span class="visitor-pill" id="visitor-pill" title="Total visits">
       <span class="visitor-dot"></span>
-      <span class="visitor-num" id="visitor-num">····</span>
+      <span class="visitor-num" id="visitor-num">…</span>
       <span class="visitor-lbl">visits</span>
     </span>
     <span class="badge badge-ai" id="mode-badge">✦ AI Powered</span>
@@ -1305,11 +1305,26 @@ function fmtCount(n) {
   return String(n);
 }
 
-// Counter providers, tried in order. Each returns the new/current total.
-// `hit` increments (once per session); `get` only reads.
+// ── Visitor counter ──
+// Strategy: a locally-tracked count is the guaranteed floor so the pill ALWAYS
+// shows a number, even fully offline. Remote providers (an owned backend first,
+// then public services) are an optional "upgrade" that replaces the local number
+// with the true global total when reachable. The pill never hides or goes blank.
 const COUNTER_KEY = 'archlab_visits';
+
+// OPTIONAL: when you deploy your own counter (e.g. a Cloudflare Worker), set this
+// URL and it becomes the authoritative source. Until then it's skipped.
+//   GET  {OWNED_COUNTER_URL}            -> { value: <total> }
+//   POST {OWNED_COUNTER_URL} (increment) -> { value: <total> }
+const OWNED_COUNTER_URL = ''; // e.g. 'https://archlab-counter.<you>.workers.dev/'
+
 const COUNTER_PROVIDERS = [
-  { // maintained postgrest mirror of countapi
+  OWNED_COUNTER_URL ? {
+    hit: () => fetch(OWNED_COUNTER_URL, { method:'POST', cache:'no-store' }),
+    get: () => fetch(OWNED_COUNTER_URL, { cache:'no-store' }),
+    parse: async (r) => (await r.json())?.value,
+  } : null,
+  { // public mirror of countapi (postgrest) — best-effort
     hit: () => fetch('https://countapi.maayanlab.cloud/rpc/hit', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ key: COUNTER_KEY }), cache:'no-store'
@@ -1317,56 +1332,66 @@ const COUNTER_PROVIDERS = [
     get: () => fetch('https://countapi.maayanlab.cloud/rpc/get?key='+COUNTER_KEY, { cache:'no-store' }),
     parse: async (r) => { const d = await r.json(); return Array.isArray(d) ? d[0]?.value : (d?.value ?? d); }
   },
-  { // original countapi (may be down — fallback only)
+  { // original countapi — best-effort
     hit: () => fetch('https://api.countapi.xyz/hit/archlab.eknathalabs.com/visits', { cache:'no-store' }),
     get: () => fetch('https://api.countapi.xyz/get/archlab.eknathalabs.com/visits', { cache:'no-store' }),
     parse: async (r) => (await r.json())?.value
   },
-];
+].filter(Boolean);
+
+// Local count: a real, monotonically-increasing per-browser tally. This is the
+// floor the pill shows instantly; one increment per session.
+function localCounter(isNewSession) {
+  let n = parseInt(localStorage.getItem('archlab_localcount') || '0', 10);
+  if (!Number.isFinite(n)) n = 0;
+  if (isNewSession) { n += 1; localStorage.setItem('archlab_localcount', n); }
+  return n;
+}
 
 async function initVisitorCounter() {
   const el = document.getElementById('visitor-num');
   if (!el) return;
-  const isNewSession = !sessionStorage.getItem('archlab_counted');
+  const pill = document.getElementById('visitor-pill');
+  pill?.style.setProperty('display', ''); // ensure visible (undo any prior hide)
 
+  const isNewSession = !sessionStorage.getItem('archlab_counted');
+  if (isNewSession) sessionStorage.setItem('archlab_counted', '1');
+
+  // 1) Show SOMETHING immediately: cached global total if we have one, else local.
+  const cachedGlobal = parseInt(localStorage.getItem('archlab_lastcount') || '', 10);
+  const localNow = localCounter(isNewSession);
+  const floor = Number.isFinite(cachedGlobal) ? Math.max(cachedGlobal, localNow) : localNow;
+  el.textContent = fmtCount(floor);
+  pill?.setAttribute('title', 'Total visits');
+
+  // 2) Try to upgrade to the true global total from a remote provider.
   for (const p of COUNTER_PROVIDERS) {
     try {
       const resp = await (isNewSession ? p.hit() : p.get());
       if (!resp.ok) throw new Error('status '+resp.status);
       const value = await p.parse(resp);
       if (typeof value === 'number' && isFinite(value)) {
-        if (isNewSession) sessionStorage.setItem('archlab_counted', '1');
         localStorage.setItem('archlab_lastcount', value);
         animateCount(el, value);
-        return; // success — stop trying providers
+        pill?.setAttribute('title', 'Total visits');
+        return; // got the authoritative number
       }
       throw new Error('no numeric value');
-    } catch (e) {
-      /* try next provider */
-    }
+    } catch (e) { /* try next provider */ }
   }
-
-  // All providers failed: show last known value (or hide the pill cleanly).
-  const last = parseInt(localStorage.getItem('archlab_lastcount') || '', 10);
-  if (Number.isFinite(last)) {
-    el.textContent = fmtCount(last);
-    document.getElementById('visitor-pill')?.setAttribute('title', 'Total visits (cached)');
-  } else {
-    // Never counted and offline — hide rather than show a broken dash.
-    document.getElementById('visitor-pill')?.style.setProperty('display', 'none');
-  }
+  // 3) All remote providers failed — the local/cached number already shown stands.
+  pill?.setAttribute('title', 'Total visits (this device)');
 }
 
 function animateCount(el, target) {
-  const shown = parseInt(localStorage.getItem('archlab_lastcount_shown')||'0',10);
-  const start = shown && shown <= target ? shown : Math.max(0, target-40);
+  const shown = parseInt(String(el.textContent).replace(/[^0-9]/g,''),10);
+  const start = Number.isFinite(shown) && shown <= target ? shown : Math.max(0, target-40);
   const dur = 900, t0 = performance.now();
   function tick(now){
     const p = Math.min(1, (now-t0)/dur);
     const eased = 1 - Math.pow(1-p, 3);
     el.textContent = fmtCount(Math.round(start + (target-start)*eased));
     if (p < 1) requestAnimationFrame(tick);
-    else localStorage.setItem('archlab_lastcount_shown', target);
   }
   requestAnimationFrame(tick);
 }
