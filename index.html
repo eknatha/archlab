@@ -74,6 +74,7 @@
 [data-theme="light"] .pbtn[data-p="docker"].active{ background:#eff6ff; }
 [data-theme="light"] .pbtn[data-p="net"].active   { background:#fffbeb; }
 [data-theme="light"] .pbtn[data-p="obs"].active   { background:#ecfeff; }
+[data-theme="light"] .pbtn[data-p="ai"].active    { background:#f5f3ff; }
 [data-theme="light"] .apikey-section { background:rgba(124,58,237,0.04); }
 [data-theme="light"] .prompt-hint { background:rgba(22,163,74,0.04); border-color:rgba(22,163,74,0.15); }
 [data-theme="light"] .badge-ai { background:rgba(22,163,74,0.1); border-color:rgba(22,163,74,0.3); }
@@ -192,6 +193,7 @@ header {
 .pbtn[data-p="docker"].active{ color:var(--docker); border-color:var(--docker); background:#000d1a; box-shadow:0 0 12px rgba(36,150,237,0.12); }
 .pbtn[data-p="net"].active   { color:var(--net);    border-color:var(--net);    background:#140e00; box-shadow:0 0 12px rgba(245,158,11,0.12); }
 .pbtn[data-p="obs"].active   { color:var(--obs);    border-color:var(--obs);    background:#001018; box-shadow:0 0 12px rgba(6,182,212,0.12); }
+.pbtn[data-p="ai"].active    { color:#c4b5fd;       border-color:#a78bfa;       background:#0c0618; box-shadow:0 0 12px rgba(167,139,250,0.16); }
 
 /* Templates */
 .tmpls { display:flex; flex-direction:column; gap:3px; }
@@ -695,6 +697,7 @@ textarea::placeholder { color:var(--text3); }
         <button class="pbtn"        data-p="tf"    ><span class="ic">🏗</span><span class="plabel">Terraform</span></button>
         <button class="pbtn"        data-p="docker"><span class="ic">🐳</span><span class="plabel">Docker</span></button>
         <button class="pbtn"        data-p="net"   ><span class="ic">🛡</span><span class="plabel">Network</span></button>
+        <button class="pbtn"        data-p="ai"    ><span class="ic">🤖</span><span class="plabel">AI / LLM</span></button>
         <button class="pbtn"        data-p="obs"   ><span class="ic">📊</span><span class="plabel">Observe</span></button>
       </div>
     </div>
@@ -727,6 +730,11 @@ textarea::placeholder { color:var(--text3); }
         <button class="tbtn" onclick="useTpl('dockerCompose')"><span class="ti">🐳</span><span class="tname">Docker Compose Stack</span></button>
         <button class="tbtn" onclick="useTpl('observability')"><span class="ti">📊</span><span class="tname">Observability Stack</span></button>
         <button class="tbtn" onclick="useTpl('zeroTrust')"><span class="ti">🔐</span><span class="tname">Zero Trust Network</span></button>
+        <button class="tbtn" onclick="useTpl('llmRag')"><span class="ti">🤖</span><span class="tname">RAG Pipeline (LLM + Vector DB)</span></button>
+        <button class="tbtn" onclick="useTpl('llmAgent')"><span class="ti">🧠</span><span class="tname">AI Agent Orchestration</span></button>
+        <button class="tbtn" onclick="useTpl('llmGateway')"><span class="ti">🚦</span><span class="tname">LLM Gateway & Caching</span></button>
+        <button class="tbtn" onclick="useTpl('llmFinetune')"><span class="ti">🎛</span><span class="tname">LLM Fine-Tuning Pipeline</span></button>
+        <button class="tbtn" onclick="useTpl('llmChatbot')"><span class="ti">💬</span><span class="tname">Production AI Chatbot (SaaS)</span></button>
       </div>
     </div>
 
@@ -1469,6 +1477,184 @@ function initPlatformButtons() {
 //  TEMPLATES
 // ═══════════════════════════════════════════════════════
 const TEMPLATES = {
+  // ── AI / LLM application architectures ──
+  llmRag:{
+    platform:'ai',title:'RAG Pipeline (LLM + Vector DB)',
+    groups:[
+      {id:'g_client',label:'Client',color:'#1a2a1a'},
+      {id:'g_ingest',label:'Ingestion Pipeline (offline)',color:'#0c0618'},
+      {id:'g_query',label:'Query Path (online)',color:'#001520'},
+      {id:'g_data',label:'Knowledge Store',color:'#1a0a00'},
+      {id:'g_llm',label:'Model Layer',color:'#0b0015'},
+    ],
+    nodes:[
+      {id:'user',label:'User\n(Chat UI)',icon:'👤',group:'g_client',tier:'edge',public:true},
+      {id:'docs',label:'Source Docs\n(PDF, web, DB)',icon:'📄',group:'g_ingest',stateful:true},
+      {id:'chunk',label:'Chunker &\nCleaner',icon:'✂',color:'#a78bfa',group:'g_ingest'},
+      {id:'embed_in',label:'Embedding Model\n(ingest)',icon:'🧬',color:'#a78bfa',group:'g_ingest'},
+      {id:'api',label:'RAG API\n(orchestrator)',icon:'🤖',color:'#a78bfa',group:'g_query',tier:'compute'},
+      {id:'embed_q',label:'Embedding Model\n(query)',icon:'🧬',color:'#a78bfa',group:'g_query'},
+      {id:'vdb',label:'Vector DB\n(Pinecone/pgvector)',icon:'🗄',color:'#a78bfa',group:'g_data',stateful:true,pii:true},
+      {id:'cache',label:'Semantic Cache\n(Redis)',icon:'⚡',color:'#a78bfa',group:'g_data',stateful:true},
+      {id:'rerank',label:'Reranker\n(cross-encoder)',icon:'📊',color:'#a78bfa',group:'g_llm'},
+      {id:'llm',label:'LLM\n(GPT/Claude)',icon:'🧠',color:'#a78bfa',group:'g_llm',cost:5},
+    ],
+    edges:[
+      {from:'docs',to:'chunk',label:'load'},
+      {from:'chunk',to:'embed_in',label:'chunks'},
+      {from:'embed_in',to:'vdb',label:'upsert'},
+      {from:'user',to:'api',label:'query'},
+      {from:'api',to:'cache',label:'check'},
+      {from:'api',to:'embed_q',label:'embed'},
+      {from:'embed_q',to:'vdb',label:'similarity'},
+      {from:'vdb',to:'rerank',label:'top-k'},
+      {from:'rerank',to:'llm',label:'context'},
+      {from:'api',to:'llm',label:'prompt+ctx'},
+      {from:'llm',to:'user',label:'answer'},
+    ]
+  },
+  llmAgent:{
+    platform:'ai',title:'AI Agent Orchestration',
+    groups:[
+      {id:'g_client',label:'Client',color:'#1a2a1a'},
+      {id:'g_orch',label:'Agent Runtime',color:'#0c0618'},
+      {id:'g_tools',label:'Tools / Actions',color:'#001520'},
+      {id:'g_mem',label:'Memory & State',color:'#1a0a00'},
+      {id:'g_model',label:'Model Layer',color:'#0b0015'},
+    ],
+    nodes:[
+      {id:'user',label:'User\nRequest',icon:'👤',group:'g_client',tier:'edge',public:true},
+      {id:'planner',label:'Planner /\nOrchestrator',icon:'🧠',color:'#a78bfa',group:'g_orch',tier:'compute'},
+      {id:'router',label:'Tool Router\n(function calling)',icon:'🚦',color:'#a78bfa',group:'g_orch'},
+      {id:'exec',label:'Executor\nLoop',icon:'🔁',color:'#a78bfa',group:'g_orch'},
+      {id:'guard',label:'Guardrails\n& Validation',icon:'🛡',color:'#a78bfa',group:'g_orch'},
+      {id:'search',label:'Web Search\nTool',icon:'🌐',color:'#a78bfa',group:'g_tools'},
+      {id:'code',label:'Code Exec\nSandbox',icon:'⚙',color:'#a78bfa',group:'g_tools'},
+      {id:'db_tool',label:'DB Query\nTool',icon:'🗄',color:'#a78bfa',group:'g_tools'},
+      {id:'mem',label:'Short/Long-Term\nMemory (Vector)',icon:'🧬',color:'#a78bfa',group:'g_mem',stateful:true,pii:true},
+      {id:'state',label:'Session State\n(Redis)',icon:'⚡',color:'#a78bfa',group:'g_mem',stateful:true},
+      {id:'llm',label:'LLM\n(reasoning)',icon:'🧠',color:'#a78bfa',group:'g_model',cost:5},
+    ],
+    edges:[
+      {from:'user',to:'planner',label:'goal'},
+      {from:'planner',to:'llm',label:'plan'},
+      {from:'planner',to:'router',label:'steps'},
+      {from:'router',to:'exec',label:'dispatch'},
+      {from:'exec',to:'search',label:'call'},
+      {from:'exec',to:'code',label:'call'},
+      {from:'exec',to:'db_tool',label:'call'},
+      {from:'exec',to:'guard',label:'validate'},
+      {from:'exec',to:'mem',label:'recall'},
+      {from:'exec',to:'state',label:'persist'},
+      {from:'guard',to:'planner',label:'observe'},
+      {from:'planner',to:'user',label:'result'},
+    ]
+  },
+  llmGateway:{
+    platform:'ai',title:'LLM Gateway & Caching',
+    groups:[
+      {id:'g_apps',label:'Applications',color:'#1a2a1a'},
+      {id:'g_gw',label:'LLM Gateway / Proxy',color:'#0c0618'},
+      {id:'g_obs',label:'Governance & Observability',color:'#001018'},
+      {id:'g_providers',label:'Model Providers',color:'#0b0015'},
+    ],
+    nodes:[
+      {id:'app1',label:'App A\n(chat)',icon:'💬',group:'g_apps',tier:'edge',public:true},
+      {id:'app2',label:'App B\n(batch jobs)',icon:'⚙',group:'g_apps'},
+      {id:'gw',label:'LLM Gateway\n(LiteLLM/Portkey)',icon:'🚦',color:'#a78bfa',group:'g_gw',tier:'compute'},
+      {id:'auth',label:'API Key &\nRate Limit',icon:'🔐',color:'#a78bfa',group:'g_gw'},
+      {id:'cache',label:'Prompt Cache\n(Redis)',icon:'⚡',color:'#a78bfa',group:'g_gw',stateful:true},
+      {id:'fallback',label:'Fallback &\nRetry Router',icon:'🔁',color:'#a78bfa',group:'g_gw'},
+      {id:'cost',label:'Cost &\nToken Metering',icon:'📊',color:'#a78bfa',group:'g_obs',tier:'obs'},
+      {id:'trace',label:'Trace / Logs\n(Langfuse)',icon:'📊',color:'#a78bfa',group:'g_obs',tier:'obs'},
+      {id:'openai',label:'OpenAI',icon:'🧠',color:'#a78bfa',group:'g_providers',cost:5},
+      {id:'anthropic',label:'Anthropic\nClaude',icon:'🧠',color:'#a78bfa',group:'g_providers',cost:5},
+      {id:'local',label:'Self-Hosted\n(vLLM)',icon:'🖥',color:'#a78bfa',group:'g_providers',cost:4},
+    ],
+    edges:[
+      {from:'app1',to:'gw',label:'request'},
+      {from:'app2',to:'gw',label:'request'},
+      {from:'gw',to:'auth',label:'authz'},
+      {from:'gw',to:'cache',label:'lookup'},
+      {from:'gw',to:'fallback',label:'route'},
+      {from:'fallback',to:'openai',label:'primary'},
+      {from:'fallback',to:'anthropic',label:'fallback'},
+      {from:'fallback',to:'local',label:'cheap path'},
+      {from:'gw',to:'cost',label:'meter'},
+      {from:'gw',to:'trace',label:'log'},
+    ]
+  },
+  llmFinetune:{
+    platform:'ai',title:'LLM Fine-Tuning Pipeline',
+    groups:[
+      {id:'g_data',label:'Data Preparation',color:'#1a0a00'},
+      {id:'g_train',label:'Training',color:'#0c0618'},
+      {id:'g_eval',label:'Evaluation & Registry',color:'#001520'},
+      {id:'g_serve',label:'Serving',color:'#0b0015'},
+    ],
+    nodes:[
+      {id:'raw',label:'Raw Datasets\n(object store)',icon:'🗄',group:'g_data',stateful:true},
+      {id:'curate',label:'Curation &\nLabeling',icon:'✂',color:'#a78bfa',group:'g_data'},
+      {id:'format',label:'Format\n(JSONL/chat)',icon:'📄',color:'#a78bfa',group:'g_data'},
+      {id:'base',label:'Base Model\n(Llama/Mistral)',icon:'🧠',color:'#a78bfa',group:'g_train'},
+      {id:'train',label:'Fine-Tune Job\n(LoRA, GPU)',icon:'🎛',color:'#a78bfa',group:'g_train',cost:5,tier:'compute'},
+      {id:'track',label:'Experiment\nTracking (W&B)',icon:'📊',color:'#a78bfa',group:'g_train',tier:'obs'},
+      {id:'eval',label:'Eval Harness\n(benchmarks)',icon:'📊',color:'#a78bfa',group:'g_eval'},
+      {id:'registry',label:'Model Registry\n(versioned)',icon:'🗄',color:'#a78bfa',group:'g_eval',stateful:true},
+      {id:'serve',label:'Inference Server\n(vLLM/TGI)',icon:'🚦',color:'#a78bfa',group:'g_serve',tier:'compute',cost:4},
+      {id:'app',label:'Application',icon:'💬',color:'#a78bfa',group:'g_serve',tier:'edge'},
+    ],
+    edges:[
+      {from:'raw',to:'curate',label:'clean'},
+      {from:'curate',to:'format',label:'label'},
+      {from:'format',to:'train',label:'dataset'},
+      {from:'base',to:'train',label:'weights'},
+      {from:'train',to:'track',label:'metrics'},
+      {from:'train',to:'eval',label:'candidate'},
+      {from:'eval',to:'registry',label:'promote'},
+      {from:'registry',to:'serve',label:'deploy'},
+      {from:'serve',to:'app',label:'inference'},
+    ]
+  },
+  llmChatbot:{
+    platform:'ai',title:'Production AI Chatbot (SaaS)',
+    groups:[
+      {id:'g_edge',label:'Edge',color:'#1a1800'},
+      {id:'g_app',label:'Application Tier',color:'#001520'},
+      {id:'g_ai',label:'AI / Retrieval',color:'#0c0618'},
+      {id:'g_data',label:'Data & State',color:'#1a0a00'},
+      {id:'g_obs',label:'Observability',color:'#001018'},
+    ],
+    nodes:[
+      {id:'user',label:'Users\n(Web/Mobile)',icon:'👤',group:'g_edge',tier:'edge',public:true},
+      {id:'cdn',label:'CDN +\nWAF',icon:'🛡',color:'#a78bfa',group:'g_edge',tier:'edge',public:true},
+      {id:'api',label:'API Gateway\n(streaming/SSE)',icon:'🚦',color:'#a78bfa',group:'g_app',tier:'compute'},
+      {id:'auth',label:'Auth\n(OIDC)',icon:'🔐',color:'#a78bfa',group:'g_app',tier:'security'},
+      {id:'orch',label:'Chat Orchestrator',icon:'🤖',color:'#a78bfa',group:'g_app',tier:'compute'},
+      {id:'guard',label:'Safety &\nModeration',icon:'🛡',color:'#a78bfa',group:'g_ai'},
+      {id:'retr',label:'Retriever\n(RAG)',icon:'🧬',color:'#a78bfa',group:'g_ai'},
+      {id:'llm',label:'LLM via\nGateway',icon:'🧠',color:'#a78bfa',group:'g_ai',cost:5},
+      {id:'vdb',label:'Vector DB',icon:'🗄',color:'#a78bfa',group:'g_data',stateful:true,pii:true},
+      {id:'pg',label:'Postgres\n(chat history)',icon:'🗄',color:'#a78bfa',group:'g_data',stateful:true,pii:true},
+      {id:'cache',label:'Redis\n(sessions+cache)',icon:'⚡',color:'#a78bfa',group:'g_data',stateful:true},
+      {id:'obs',label:'LLM Observability\n(traces, evals)',icon:'📊',color:'#a78bfa',group:'g_obs',tier:'obs'},
+    ],
+    edges:[
+      {from:'user',to:'cdn',label:'HTTPS'},
+      {from:'cdn',to:'api',label:'filtered'},
+      {from:'api',to:'auth',label:'verify'},
+      {from:'api',to:'orch',label:'message'},
+      {from:'orch',to:'guard',label:'pre-check'},
+      {from:'orch',to:'retr',label:'retrieve'},
+      {from:'retr',to:'vdb',label:'search'},
+      {from:'orch',to:'llm',label:'generate'},
+      {from:'orch',to:'cache',label:'session'},
+      {from:'orch',to:'pg',label:'persist'},
+      {from:'llm',to:'guard',label:'post-check'},
+      {from:'orch',to:'obs',label:'trace'},
+      {from:'llm',to:'user',label:'stream'},
+    ]
+  },
   aws3tier:{
     platform:'aws',title:'AWS 3-Tier Web App',
     groups:[
