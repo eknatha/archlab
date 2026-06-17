@@ -2930,7 +2930,15 @@ function layoutNodes(nodes, groups) {
   const layer = {};
   nodes.forEach(n => { layer[n.id] = 0; });
   const indegWork = { ...indeg };
-  const queue = nodes.filter(n => indegWork[n.id] === 0).map(n => n.id);
+  let queue = nodes.filter(n => indegWork[n.id] === 0).map(n => n.id);
+  // If every node has an incoming edge (pure cycle, e.g. a request/response loop),
+  // Kahn would start empty and produce a sparse layers array. Seed with the
+  // lowest-indegree node so ranking still proceeds.
+  if (!queue.length && nodes.length) {
+    let seed = nodes[0].id, min = Infinity;
+    nodes.forEach(n => { if (indegWork[n.id] < min) { min = indegWork[n.id]; seed = n.id; } });
+    queue = [seed];
+  }
   const seen = new Set(queue);
   let qi = 0;
   while (qi < queue.length) {
@@ -2974,7 +2982,7 @@ function layoutNodes(nodes, groups) {
   // ── 3. Position: layers left→right, members spread top→bottom and centred ──
   const COL_W = NODE_W + PAD_X + 26;
   const ROW_H = NODE_H + PAD_Y;
-  const maxRows = Math.max(1, ...layers.map(c => (c ? c.length : 0)));
+  const maxRows = Math.max(1, ...layers.map(c => (c ? c.length : 0)).filter(v => Number.isFinite(v)));
   const colHeight = maxRows * ROW_H;
   layers.forEach((col, L) => {
     if (!col) return;
