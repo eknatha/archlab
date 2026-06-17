@@ -1306,41 +1306,57 @@ function fmtCount(n) {
 }
 
 // ── Visitor counter ──
-// Strategy: a locally-tracked count is the guaranteed floor so the pill ALWAYS
-// shows a number, even fully offline. Remote providers (an owned backend first,
-// then public services) are an optional "upgrade" that replaces the local number
-// with the true global total when reachable. The pill never hides or goes blank.
-const COUNTER_KEY = 'archlab_visits';
+// Primary: Abacus (abacus.jasoncameron.dev) — a free, no-account, CORS-enabled
+// counting API (the maintained successor to countapi). Same approach the
+// EknathaLabs homepage uses. We try a normal fetch first, then a JSONP fallback
+// (a <script callback> request, which CANNOT be blocked by CORS) so the count
+// works even in the strictest browsers. A per-device local tally is the final
+// floor so the pill always shows a number.
+const COUNTER_NS  = 'arch.eknathalabs.com';
+const COUNTER_KEY = 'visits';
+const ABACUS_BASE = 'https://abacus.jasoncameron.dev';
 
-// OPTIONAL: when you deploy your own counter (e.g. a Cloudflare Worker), set this
-// URL and it becomes the authoritative source. Until then it's skipped.
-//   GET  {OWNED_COUNTER_URL}            -> { value: <total> }
-//   POST {OWNED_COUNTER_URL} (increment) -> { value: <total> }
-const OWNED_COUNTER_URL = ''; // e.g. 'https://archlab-counter.<you>.workers.dev/'
+// OPTIONAL self-hosted override (Cloudflare Worker etc). Empty = skip.
+const OWNED_COUNTER_URL = '';
+
+function fetchT(url, opts = {}, ms = 4000) {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(id));
+}
+
+// JSONP: inject <script src=...?callback=fn>. Resolves with the JSON the server
+// wraps in fn(...). Immune to CORS. Times out if the script never loads.
+function jsonp(url, ms = 4500) {
+  return new Promise((resolve, reject) => {
+    const cb = '__abacus_cb_' + Math.random().toString(36).slice(2);
+    const s = document.createElement('script');
+    let done = false;
+    const cleanup = () => { delete window[cb]; s.remove(); clearTimeout(timer); };
+    const timer = setTimeout(() => { if (!done) { done = true; cleanup(); reject(new Error('jsonp timeout')); } }, ms);
+    window[cb] = (data) => { if (done) return; done = true; cleanup(); resolve(data); };
+    s.onerror = () => { if (!done) { done = true; cleanup(); reject(new Error('jsonp error')); } };
+    s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb;
+    document.head.appendChild(s);
+  });
+}
 
 const COUNTER_PROVIDERS = [
   OWNED_COUNTER_URL ? {
-    hit: () => fetch(OWNED_COUNTER_URL, { method:'POST', cache:'no-store' }),
-    get: () => fetch(OWNED_COUNTER_URL, { cache:'no-store' }),
-    parse: async (r) => (await r.json())?.value,
+    hit: () => fetchT(OWNED_COUNTER_URL, { method:'POST', cache:'no-store' }).then(r=>r.json()),
+    get: () => fetchT(OWNED_COUNTER_URL, { cache:'no-store' }).then(r=>r.json()),
   } : null,
-  { // public mirror of countapi (postgrest) — best-effort
-    hit: () => fetch('https://countapi.maayanlab.cloud/rpc/hit', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ key: COUNTER_KEY }), cache:'no-store'
-    }),
-    get: () => fetch('https://countapi.maayanlab.cloud/rpc/get?key='+COUNTER_KEY, { cache:'no-store' }),
-    parse: async (r) => { const d = await r.json(); return Array.isArray(d) ? d[0]?.value : (d?.value ?? d); }
+  { // Abacus via CORS fetch
+    hit: () => fetchT(`${ABACUS_BASE}/hit/${COUNTER_NS}/${COUNTER_KEY}`, { cache:'no-store' }).then(r=>r.json()),
+    get: () => fetchT(`${ABACUS_BASE}/get/${COUNTER_NS}/${COUNTER_KEY}`, { cache:'no-store' }).then(r=>r.json()),
   },
-  { // original countapi — best-effort
-    hit: () => fetch('https://api.countapi.xyz/hit/archlab.eknathalabs.com/visits', { cache:'no-store' }),
-    get: () => fetch('https://api.countapi.xyz/get/archlab.eknathalabs.com/visits', { cache:'no-store' }),
-    parse: async (r) => (await r.json())?.value
+  { // Abacus via JSONP (CORS-proof fallback)
+    hit: () => jsonp(`${ABACUS_BASE}/hit/${COUNTER_NS}/${COUNTER_KEY}`),
+    get: () => jsonp(`${ABACUS_BASE}/get/${COUNTER_NS}/${COUNTER_KEY}`),
   },
 ].filter(Boolean);
 
-// Local count: a real, monotonically-increasing per-browser tally. This is the
-// floor the pill shows instantly; one increment per session.
+// Local count: monotonic per-browser tally; floor shown instantly. +1 per session.
 function localCounter(isNewSession) {
   let n = parseInt(localStorage.getItem('archlab_localcount') || '0', 10);
   if (!Number.isFinite(n)) n = 0;
@@ -1352,34 +1368,34 @@ async function initVisitorCounter() {
   const el = document.getElementById('visitor-num');
   if (!el) return;
   const pill = document.getElementById('visitor-pill');
-  pill?.style.setProperty('display', ''); // ensure visible (undo any prior hide)
+  pill?.style.setProperty('display', '');
 
   const isNewSession = !sessionStorage.getItem('archlab_counted');
   if (isNewSession) sessionStorage.setItem('archlab_counted', '1');
 
-  // 1) Show SOMETHING immediately: cached global total if we have one, else local.
+  // 1) Show something immediately (cached global if present, else local floor).
   const cachedGlobal = parseInt(localStorage.getItem('archlab_lastcount') || '', 10);
   const localNow = localCounter(isNewSession);
   const floor = Number.isFinite(cachedGlobal) ? Math.max(cachedGlobal, localNow) : localNow;
   el.textContent = fmtCount(floor);
   pill?.setAttribute('title', 'Total visits');
 
-  // 2) Try to upgrade to the true global total from a remote provider.
+  // 2) Upgrade to the true global total. hit() once per session, else get().
   for (const p of COUNTER_PROVIDERS) {
     try {
-      const resp = await (isNewSession ? p.hit() : p.get());
-      if (!resp.ok) throw new Error('status '+resp.status);
-      const value = await p.parse(resp);
+      const data = await (isNewSession ? p.hit() : p.get());
+      const value = (data && typeof data.value === 'number') ? data.value
+                  : (Array.isArray(data) ? data[0]?.value : undefined);
       if (typeof value === 'number' && isFinite(value)) {
         localStorage.setItem('archlab_lastcount', value);
         animateCount(el, value);
         pill?.setAttribute('title', 'Total visits');
-        return; // got the authoritative number
+        return;
       }
       throw new Error('no numeric value');
-    } catch (e) { /* try next provider */ }
+    } catch (e) { /* next provider */ }
   }
-  // 3) All remote providers failed — the local/cached number already shown stands.
+  // 3) All remote failed — local/cached number stands.
   pill?.setAttribute('title', 'Total visits (this device)');
 }
 
