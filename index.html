@@ -119,6 +119,18 @@ header {
 }
 .logo-text { font-size:16px; font-weight:800; letter-spacing:-0.5px; color:var(--text); }
 .logo-text span { color:var(--accent); }
+/* ── Visitor counter pill ── */
+.visitor-pill {
+  display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+  border:1px solid var(--border); border-radius:20px; background:var(--surface2);
+  font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text2);
+}
+.visitor-dot { width:6px; height:6px; border-radius:50%; background:var(--accent);
+  box-shadow:0 0 6px var(--accent); animation:vpulse 2s ease-in-out infinite; }
+@keyframes vpulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+.visitor-num { color:var(--text); font-weight:600; letter-spacing:0.02em; }
+.visitor-lbl { color:var(--text3); }
+@media(max-width:720px){ .visitor-lbl{ display:none; } }
 .logo-sub { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text3); letter-spacing:0.06em; display:block; margin-top:-2px; }
 
 .header-center { display:flex; align-items:center; gap:6px; }
@@ -261,6 +273,34 @@ textarea::placeholder { color:var(--text3); }
 .toolbar-title span { color:var(--accent); }
 
 .vtabs { display:flex; gap:2px; }
+
+/* ── Lens / projection bar ── */
+.lensbar {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:7px 1.25rem; border-bottom:1px solid var(--border);
+  background:var(--surface); flex-shrink:0; min-height:38px;
+}
+.lensbar-label {
+  font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:0.12em;
+  color:var(--text3); flex-shrink:0;
+}
+.lens-opts { display:flex; gap:3px; flex-wrap:wrap; }
+.lens-opt {
+  background:none; border:1px solid transparent; padding:3px 9px; border-radius:6px;
+  font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text2);
+  cursor:pointer; transition:all 0.15s; white-space:nowrap;
+}
+.lens-opt:hover { background:var(--surface2); color:var(--text); }
+.lens-opt.active { background:var(--surface3); color:var(--text); border-color:var(--border2); }
+.lens-legend {
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-left:auto;
+  font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text2);
+}
+.lens-legend .lg-label { color:var(--text3); }
+.lens-legend .lg-item { display:inline-flex; align-items:center; gap:4px; }
+.lens-legend .lg-item i { width:9px; height:9px; border-radius:2px; display:inline-block; }
+@media(max-width:760px){ .lens-legend{ margin-left:0; width:100%; } }
+
 .vtab {
   background:none; border:none; padding:4px 10px; font-family:'JetBrains Mono',monospace;
   font-size:10px; color:var(--text3); cursor:pointer; border-radius:5px; transition:all 0.15s;
@@ -543,6 +583,11 @@ textarea::placeholder { color:var(--text3); }
   </div>
 
   <div class="header-right">
+    <span class="visitor-pill" id="visitor-pill" title="Total visits">
+      <span class="visitor-dot"></span>
+      <span class="visitor-num" id="visitor-num">····</span>
+      <span class="visitor-lbl">visits</span>
+    </span>
     <span class="badge badge-ai" id="mode-badge">✦ AI Powered</span>
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
     <button class="mobile-toggle" id="mobile-toggle" onclick="toggleMobileSidebar()">☰</button>
@@ -654,6 +699,20 @@ Press Ctrl+Enter to generate."></textarea>
       <button class="tbarbtn" id="btn-blast" onclick="toggleBlastMode()" disabled title="Blast radius — click a node to see impact">💥 Blast</button>
       <button class="tbarbtn" id="btn-expand" onclick="toggleExpandMode()" disabled title="Click any node to expand details">🔍 Expand</button>
       <button class="tbarbtn" onclick="zoomFit()">⊞ Fit</button>
+    </div>
+
+    <!-- Lens / projection selector -->
+    <div class="lensbar" id="lensbar" style="display:none">
+      <span class="lensbar-label">⊙ LENS</span>
+      <div class="lens-opts">
+        <button class="lens-opt active" data-lens="default"  onclick="setLens('default')"  title="As designed">◇ Default</button>
+        <button class="lens-opt" data-lens="security" onclick="setLens('security')" title="Trust boundaries · PII · public exposure">🛡 Security</button>
+        <button class="lens-opt" data-lens="cost"     onclick="setLens('cost')"     title="Relative spend heat">💰 Cost</button>
+        <button class="lens-opt" data-lens="data"     onclick="setLens('data')"     title="Stateful & data-at-rest">🗄 Data</button>
+        <button class="lens-opt" data-lens="blast"    onclick="setLens('blast')"    title="Failure severity by downstream reach">💥 Blast</button>
+        <button class="lens-opt" data-lens="latency"  onclick="setLens('latency')"  title="Synchronous call-chain depth">⏱ Latency</button>
+      </div>
+      <div class="lens-legend" id="lens-legend" style="display:none"></div>
     </div>
 
     <!-- Step-by-step build panel -->
@@ -1121,7 +1180,87 @@ window.addEventListener('DOMContentLoaded', () => {
   const stored = getKey();
   if (stored) document.getElementById('apikey').value = '••••••••••••••••';
   useTpl('aws3tier');
+  initVisitorCounter();
 });
+
+// ═══════════════════════════════════════════════════════
+//  VISITOR COUNTER (no backend)
+//  Counts a visit once per browser session, then shows the live total.
+//  Tries a maintained endpoint first, falls back to a mirror, then to a
+//  local estimate — the pill always shows something sensible.
+// ═══════════════════════════════════════════════════════
+function fmtCount(n) {
+  n = Number(n) || 0;
+  if (n >= 1e6) return (n/1e6).toFixed(n%1e6?1:0)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(n%1e3?1:0)+'k';
+  return String(n);
+}
+
+// Counter providers, tried in order. Each returns the new/current total.
+// `hit` increments (once per session); `get` only reads.
+const COUNTER_KEY = 'archlab_visits';
+const COUNTER_PROVIDERS = [
+  { // maintained postgrest mirror of countapi
+    hit: () => fetch('https://countapi.maayanlab.cloud/rpc/hit', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ key: COUNTER_KEY }), cache:'no-store'
+    }),
+    get: () => fetch('https://countapi.maayanlab.cloud/rpc/get?key='+COUNTER_KEY, { cache:'no-store' }),
+    parse: async (r) => { const d = await r.json(); return Array.isArray(d) ? d[0]?.value : (d?.value ?? d); }
+  },
+  { // original countapi (may be down — fallback only)
+    hit: () => fetch('https://api.countapi.xyz/hit/archlab.eknathalabs.com/visits', { cache:'no-store' }),
+    get: () => fetch('https://api.countapi.xyz/get/archlab.eknathalabs.com/visits', { cache:'no-store' }),
+    parse: async (r) => (await r.json())?.value
+  },
+];
+
+async function initVisitorCounter() {
+  const el = document.getElementById('visitor-num');
+  if (!el) return;
+  const isNewSession = !sessionStorage.getItem('archlab_counted');
+
+  for (const p of COUNTER_PROVIDERS) {
+    try {
+      const resp = await (isNewSession ? p.hit() : p.get());
+      if (!resp.ok) throw new Error('status '+resp.status);
+      const value = await p.parse(resp);
+      if (typeof value === 'number' && isFinite(value)) {
+        if (isNewSession) sessionStorage.setItem('archlab_counted', '1');
+        localStorage.setItem('archlab_lastcount', value);
+        animateCount(el, value);
+        return; // success — stop trying providers
+      }
+      throw new Error('no numeric value');
+    } catch (e) {
+      /* try next provider */
+    }
+  }
+
+  // All providers failed: show last known value (or hide the pill cleanly).
+  const last = parseInt(localStorage.getItem('archlab_lastcount') || '', 10);
+  if (Number.isFinite(last)) {
+    el.textContent = fmtCount(last);
+    document.getElementById('visitor-pill')?.setAttribute('title', 'Total visits (cached)');
+  } else {
+    // Never counted and offline — hide rather than show a broken dash.
+    document.getElementById('visitor-pill')?.style.setProperty('display', 'none');
+  }
+}
+
+function animateCount(el, target) {
+  const shown = parseInt(localStorage.getItem('archlab_lastcount_shown')||'0',10);
+  const start = shown && shown <= target ? shown : Math.max(0, target-40);
+  const dur = 900, t0 = performance.now();
+  function tick(now){
+    const p = Math.min(1, (now-t0)/dur);
+    const eased = 1 - Math.pow(1-p, 3);
+    el.textContent = fmtCount(Math.round(start + (target-start)*eased));
+    if (p < 1) requestAnimationFrame(tick);
+    else localStorage.setItem('archlab_lastcount_shown', target);
+  }
+  requestAnimationFrame(tick);
+}
 
 // ═══════════════════════════════════════════════════════
 //  MODE
@@ -2115,6 +2254,7 @@ Rules:
 - Include 3-8 groups, 8-20 nodes, appropriate edges with meaningful labels
 - Edge labels: empty string "" for unlabeled, or short verb like "HTTP", "gRPC", "SQL", "cache", "events", "deploy", "monitor", etc.
 - All IDs must be unique, no spaces in IDs
+- OPTIONAL per-node fields for richer "lens" views (include when confidently known, else omit): "tier" (one of: edge, compute, data, obs, security), "stateful" (bool), "pii" (bool — handles personal data), "public" (bool — internet-reachable), "cost" (int 1–5 relative monthly spend), "redundant" (bool — HA/replicated)
 - Return ONLY the JSON object, nothing else`;
 
 async function generateWithAI(prompt) {
@@ -2333,6 +2473,10 @@ function delay(ms) { return new Promise(r=>setTimeout(r,ms)); }
 // ═══════════════════════════════════════════════════════
 function renderData(data, title, method) {
   currentData = data;
+  currentLens = 'default';
+  document.querySelectorAll('.lens-opt').forEach(el => el.classList.toggle('active', el.dataset.lens==='default'));
+  const _lb=document.getElementById('lensbar'); if(_lb) _lb.style.display='flex';
+  const _ll=document.getElementById('lens-legend'); if(_ll){ _ll.style.display='none'; _ll.innerHTML=''; }
   const svgStr = renderSVG(data);
   const dsl = generateDSL(data, title, platform);
   document.getElementById('diag-out').innerHTML = svgStr;
@@ -2367,6 +2511,8 @@ function clearCanvas() {
   document.getElementById('prompt').value = '';
   document.getElementById('diag-wrap').style.display = 'none';
   document.getElementById('empty').style.display = 'flex';
+  const _lb=document.getElementById('lensbar'); if(_lb) _lb.style.display='none';
+  currentLens='default';
   document.getElementById('diag-title').innerHTML = '// select a template or describe your architecture';
   ['btn-svg','btn-png','btn-copy','btn-sbs','btn-blast','btn-expand'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = true; });
   document.getElementById('minimap-toggle').classList.remove('visible');
@@ -2514,10 +2660,161 @@ function layoutNodes(nodes, groups) {
   return { positions, groupRects };
 }
 
+// ═══════════════════════════════════════════════════════
+//  LENS / PROJECTION MODEL
+//  One graph, many truths. Lenses recolor/dim/badge the SAME
+//  render without touching layout. Classification is heuristic
+//  (works on offline+template diagrams) but defers to any
+//  explicit fields the AI supplies (tier/pii/public/cost/...).
+// ═══════════════════════════════════════════════════════
+let currentLens = 'default';
+
+const LENSES = {
+  default:  { label: 'Default',   icon: '◇', desc: 'As designed' },
+  security: { label: 'Security',  icon: '🛡', desc: 'Trust boundaries · PII · public exposure' },
+  cost:     { label: 'Cost',      icon: '💰', desc: 'Relative spend heat' },
+  data:     { label: 'Data',      icon: '🗄', desc: 'Stateful & data-at-rest' },
+  blast:    { label: 'Blast',     icon: '💥', desc: 'Failure severity by downstream reach' },
+  latency:  { label: 'Latency',   icon: '⏱', desc: 'Synchronous call-chain depth' },
+};
+
+// Infer attributes for one node from its label/icon and graph position.
+function classifyNode(n, ctx) {
+  const t = ((n.label||'') + ' ' + (n.id||'')).toLowerCase();
+  const has = (...words) => words.some(w => t.includes(w));
+
+  // tier: ingress / compute / data / observability / security
+  let tier = n.tier;
+  if (!tier) {
+    if (has('user','client','browser','internet','cdn','cloudfront','route 53','dns','waf','gateway','ingress','load balanc','alb','nlb','apim','api management')) tier = 'edge';
+    else if (has('rds','aurora','postgres','mysql','mongo','cosmos','dynamo','bigquery','redis','elasticache','cache','s3','blob','bucket','storage','database','db','statefulset','volume','data')) tier = 'data';
+    else if (has('prometheus','grafana','cloudwatch','datadog','splunk','loki','jaeger','monitor','observ','log','metric','trace','pagerduty')) tier = 'obs';
+    else if (has('vault','secret','key vault','cognito','auth','iam','kms')) tier = 'security';
+    else tier = 'compute';
+  }
+
+  const stateful = n.stateful ?? has('rds','aurora','postgres','mysql','mongo','cosmos','dynamo','redis','elasticache','cache','s3','blob','bucket','storage','database','db','statefulset','volume','kafka','queue','sqs','bigquery');
+  const pii = n.pii ?? (stateful && tier === 'data' && !has('cache','redis','queue','sqs','sns','pub/sub','kafka'));
+  // public = reachable from an edge/user node with no security node in between (heuristic: edge-tier or directly downstream of edge)
+  const isEdge = tier === 'edge';
+  const publicFacing = n.public ?? (isEdge || (ctx.fromEdge.has(n.id) && tier !== 'security'));
+
+  // cost weight 1..5 (rough): data & compute clusters cost more than queues/dns
+  let cost = n.cost;
+  if (cost == null) {
+    if (has('eks','aks','gke','cluster','kubernetes','fargate','aurora','redshift','bigquery','vertex','sagemaker')) cost = 5;
+    else if (has('rds','ec2','vm','instance','aks','compute','app','service','elasticache')) cost = 4;
+    else if (has('lambda','function','cloud run','container','docker','pod')) cost = 3;
+    else if (has('s3','blob','bucket','storage','queue','sqs','sns','pub/sub')) cost = 2;
+    else cost = 1;
+  }
+
+  // redundancy: heuristic — clusters/ASG/replicas/LB-fronted imply redundancy
+  const redundant = n.redundant ?? has('cluster','asg','replica','statefulset','deployment','load balanc','alb','nlb','fargate','aurora','multi-az','ha');
+
+  return { tier, stateful, pii, public: publicFacing, cost, redundant,
+           blast: ctx.blast[n.id] || 0, depth: ctx.depth[n.id] || 0 };
+}
+
+// Build per-node context: which nodes are directly downstream of an edge/user
+// node, blast reach (downstream count), and longest sync-chain depth.
+function buildLensContext(data) {
+  const nodes = data.nodes||[], edges = data.edges||[];
+  const adj = {}, indeg = {};
+  nodes.forEach(n => { adj[n.id] = []; indeg[n.id] = 0; });
+  edges.forEach(e => { if(adj[e.from]){ adj[e.from].push(e.to); indeg[e.to]=(indeg[e.to]||0)+1; } });
+
+  // edge-tier source nodes
+  const fromEdge = new Set();
+  nodes.forEach(n => {
+    const t = ((n.label||'')+' '+(n.id||'')).toLowerCase();
+    if (/user|client|browser|internet|cdn|cloudfront|route 53|dns|waf|gateway|ingress|load balanc|alb|nlb/.test(t)) {
+      (adj[n.id]||[]).forEach(v => fromEdge.add(v));
+    }
+  });
+
+  // blast = total reachable downstream (BFS) per node
+  const blast = {};
+  nodes.forEach(n => {
+    const seen = new Set(), q = [...(adj[n.id]||[])];
+    while (q.length){ const u=q.shift(); if(seen.has(u))continue; seen.add(u); (adj[u]||[]).forEach(v=>q.push(v)); }
+    blast[n.id] = seen.size;
+  });
+
+  // depth = longest path length from any source (sync-chain depth)
+  const depth = {}; nodes.forEach(n => depth[n.id]=0);
+  const order=[], indegW={...indeg};
+  nodes.filter(n=>!indegW[n.id]).forEach(n=>order.push(n.id));
+  for(let i=0;i<order.length;i++){ const u=order[i]; (adj[u]||[]).forEach(v=>{ if(depth[v]<depth[u]+1)depth[v]=depth[u]+1; if(--indegW[v]===0)order.push(v); }); }
+
+  return { fromEdge, blast, depth };
+}
+
+// Given a node's classification + the active lens, return render overrides:
+// { stroke, dim, badge, badgeColor }  (null fields = use node default)
+function lensStyle(cls, lens) {
+  if (lens === 'default') return {};
+  if (lens === 'security') {
+    if (cls.pii)    return { stroke:'#f87171', badge:'PII', badgeColor:'#f87171' };
+    if (cls.public) return { stroke:'#fbbf24', badge:'PUBLIC', badgeColor:'#fbbf24' };
+    if (cls.tier==='security') return { stroke:'#4ade80', badge:'🔐', badgeColor:'#4ade80' };
+    return { dim:true };
+  }
+  if (lens === 'cost') {
+    const heat = ['#4a5470','#22d3ee','#4ade80','#fbbf24','#fb923c','#f87171'][cls.cost] || '#4a5470';
+    return { stroke:heat, badge:'$'.repeat(Math.max(1,cls.cost)), badgeColor:heat };
+  }
+  if (lens === 'data') {
+    if (cls.stateful) return { stroke:'#a78bfa', badge:cls.pii?'PII':'STATE', badgeColor:'#a78bfa' };
+    return { dim:true };
+  }
+  if (lens === 'blast') {
+    const b = cls.blast;
+    const c = b>=6?'#f87171':b>=3?'#fb923c':b>=1?'#fbbf24':'#4a5470';
+    return { stroke:c, badge:b>0?('↯'+b):null, badgeColor:c, dim:b===0 };
+  }
+  if (lens === 'latency') {
+    const d = cls.depth;
+    const c = d>=5?'#f87171':d>=3?'#fbbf24':'#4ade80';
+    return { stroke:c, badge:d>0?('L'+d):null, badgeColor:c };
+  }
+  return {};
+}
+
+function setLens(lens) {
+  currentLens = lens;
+  document.querySelectorAll('.lens-opt').forEach(el =>
+    el.classList.toggle('active', el.dataset.lens === lens));
+  const legend = document.getElementById('lens-legend');
+  if (legend) {
+    legend.style.display = lens === 'default' ? 'none' : 'flex';
+    legend.innerHTML = lensLegendHTML(lens);
+  }
+  if (currentData) {
+    document.getElementById('diag-out').innerHTML = renderSVG(currentData);
+    attachNodeClickHandlers();
+    if (minimapVisible) setTimeout(renderMinimap, 60);
+  }
+}
+
+function lensLegendHTML(lens) {
+  const sw = (c,t) => `<span class="lg-item"><i style="background:${c}"></i>${t}</span>`;
+  const maps = {
+    security: sw('#f87171','PII / data-at-rest') + sw('#fbbf24','Public-facing') + sw('#4ade80','Security control') + sw('#4a5470','Internal'),
+    cost:     sw('#4a5470','$') + sw('#4ade80','$$') + sw('#fbbf24','$$$') + sw('#fb923c','$$$$') + sw('#f87171','$$$$$'),
+    data:     sw('#a78bfa','Stateful / persisted') + sw('#4a5470','Stateless'),
+    blast:    sw('#f87171','High (6+ downstream)') + sw('#fb923c','Med (3–5)') + sw('#fbbf24','Low (1–2)') + sw('#4a5470','Leaf'),
+    latency:  sw('#4ade80','Shallow') + sw('#fbbf24','Mid chain') + sw('#f87171','Deep (5+)'),
+  };
+  return `<span class="lg-label">${LENSES[lens].icon} ${LENSES[lens].label} — ${LENSES[lens].desc}</span>${maps[lens]||''}`;
+}
+
 function renderSVG(data) {
   const {nodes,edges,groups} = data;
   window._layoutEdges = edges || [];
   const {positions,groupRects} = layoutNodes(nodes, groups||[]);
+  // Lens projection context (only computed when a non-default lens is active).
+  const lensCtx = currentLens === 'default' ? null : buildLensContext(data);
 
   // Store positions globally for blast radius hit-testing
   window._lastPositions = positions;
@@ -2602,7 +2899,16 @@ function renderSVG(data) {
   (nodes||[]).forEach(n=>{
     const p=positions[n.id]; if(!p) return;
     const x=p.x-NODE_W/2, y=p.y-NODE_H/2;
-    const col=n.color||'#333d57';
+    let col=n.color||'#333d57';
+    let nodeOpacity = 1;
+    let lensBadge = null, lensBadgeColor = null;
+    if (lensCtx) {
+      const st = lensStyle(classifyNode(n, lensCtx), currentLens);
+      if (st.stroke) col = st.stroke;
+      if (st.dim) nodeOpacity = 0.28;
+      if (st.badge) { lensBadge = st.badge; lensBadgeColor = st.badgeColor || st.stroke || col; }
+    }
+    svg += `<g opacity="${nodeOpacity}">`;
     svg += `<rect x="${x+2}" y="${y+3}" width="${NODE_W}" height="${NODE_H}" rx="9" fill="${C.nodeShadow}" opacity="${isLight?'1':'0.3'}"/>`;
     svg += `<rect x="${x}" y="${y}" width="${NODE_W}" height="${NODE_H}" rx="9" fill="${C.node}" stroke="${col}" stroke-width="1.3" filter="url(#shadow)"/>`;
     svg += `<rect x="${x+1}" y="${y+1}" width="${NODE_W-2}" height="4" rx="8" fill="${col}" opacity="0.85"/>`;
@@ -2618,6 +2924,14 @@ function renderSVG(data) {
       const fs=i===0?'10':'9';
       svg += `<text x="${p.x+8}" y="${startY+i*lineH}" text-anchor="middle" font-size="${fs}" fill="${fc}" font-weight="${fw}" font-family="'JetBrains Mono',monospace">${escX(ln)}</text>`;
     });
+    // Lens badge (top-right corner pill)
+    if (lensBadge) {
+      const bw = Math.max(20, lensBadge.length*6 + 8), bh=13;
+      const bx = x+NODE_W-bw+2, by = y-6;
+      svg += `<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="6.5" fill="${lensBadgeColor}"/>`;
+      svg += `<text x="${bx+bw/2}" y="${by+9.5}" text-anchor="middle" font-size="8" font-weight="600" fill="#080a0f" font-family="'JetBrains Mono',monospace">${escX(lensBadge)}</text>`;
+    }
+    svg += `</g>`;
   });
 
   svg += '</svg>';
@@ -2994,6 +3308,7 @@ function switchView(v) {
   const tc=document.getElementById('tab-c');
   vd.style.display='none'; vs.style.display='none'; vc.style.display='none';
   td.classList.remove('active'); ts.classList.remove('active'); tc.classList.remove('active');
+  const lb=document.getElementById('lensbar'); if(lb) lb.style.display = (v==='diagram')?'flex':'none';
   if (v==='diagram') {
     vd.style.display='flex'; td.classList.add('active');
     if (minimapVisible) setTimeout(renderMinimap, 50);
