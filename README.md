@@ -1,366 +1,129 @@
 # ⬡ ArchLab — AI Architecture Diagram Generator
 
-> **arch.eknathalabs.com** · Part of the [eknathalabs.com](https://eknathalabs.com) DevOps learning platform
-
-Generate production-grade architecture diagrams for AWS, Azure, GCP, Kubernetes, CI/CD pipelines, Terraform IaC, Docker Compose, Network & Security, and Observability stacks — powered by Claude AI or fully offline.
-
----
-
-## ✦ Features
-
-### 🤖 AI Mode (Claude API)
-- Describe any architecture in plain English — Claude Sonnet generates a precise, contextual diagram
-- Intelligent component resolution with proper grouping, color coding, and edge labels
-- Understands architecture intent, not just keywords
-
-### ⚡ Offline Mode (Zero dependencies)
-- 24 production-grade templates load instantly — no API key needed
-- Keyword-based parser extracts services from free-text descriptions
-- Works fully in-browser, no server, no build step
-
-### 🌙 Dark / Light Mode
-- Auto-detects system preference (`prefers-color-scheme`) on first load
-- Manual toggle via the 🌙/☀️ button in the header
-- Preference persisted in `localStorage` across sessions
-- Full theme re-renders SVG diagrams with correct light/dark colors — not just a CSS overlay
-
-### 📱 Mobile-Optimized View
-- Sidebar slides in/out as a drawer on mobile (≤768px)
-- Hamburger `☰` toggle in header, auto-closes when tapping the canvas
-- Toolbar buttons shrink and scroll horizontally on small screens
-- Works cleanly at 375px iPhone width
-
-### ▶ Step-by-Step Build Mode
-- Click `▶ Steps` in the toolbar to open the build panel
-- Reveals the architecture layer by layer, based on diagram groups
-- Controls: **Prev**, **Play** (auto-advance every 1.2s), **Next**, layer chips for direct jump
-- Progress bar tracks position through all layers
-- Ideal for live presentations, tech talks, and teaching juniors
-
-### 💥 Blast Radius Visualizer
-- Click `💥 Blast` in the toolbar to activate crosshair mode
-- Click any node — instantly see the full failure impact:
-  - 🔴 **Red** outline — the failed component
-  - 🟡 **Amber** outlines — all downstream dependents (BFS traversal)
-  - 🔵 **Cyan** outlines — upstream dependencies
-- Impact panel lists all affected services by name
-- Dismiss with one click or deactivate blast mode
-
-### 🔍 Node Expand (click-to-expand)
-- Click `🔍 Expand` in the toolbar to activate
-- Click any node to open a detail modal showing:
-  - Incoming and outgoing connections with edge labels
-  - Layer/group membership
-  - **AI explanation** — Claude Sonnet generates a 2-3 sentence technical description of the node's role in this specific architecture (requires API key; falls back to static description offline)
-- Click backdrop or ✕ to dismiss
-
-### 🎬 Sequence Diagram View
-- A `Sequence` tab sits alongside `Diagram` and `DSL` in the toolbar
-- Automatically derives a time-ordered sequence diagram from the architecture's edges
-- Shows actors with lifelines, numbered messages, dashed return flows, activation boxes, and self-call loops
-- Re-renders automatically when theme changes or a new diagram loads
-
-### ⊟ Minimap
-- Click `⊞ Map` toggle (bottom-right of diagram) after a diagram loads
-- 140×90px canvas overview of the full diagram — group backgrounds, node boxes, edges
-- Green viewport rectangle tracks your scroll position in real-time
-- Re-renders on theme change and new diagram loads
-
-### 📐 Diagram Capabilities
-- **9 platform targets:** AWS, Azure, GCP, Kubernetes, CI/CD, Terraform, Docker, Network/Security, Observability
-- **24 built-in templates** covering the most common real-world patterns
-- **Export:** SVG (vector), PNG (2× retina), DSL (human-readable text)
-- **Views:** Diagram · Sequence · DSL
-- Pure SVG rendering — no canvas API, no third-party diagram libraries
-
----
-
-## 🗂 Templates
-
-### ☁ AWS (4 templates)
-
-| Template | Key Services |
-|---|---|
-| **AWS 3-Tier Web App** | Route53 → CloudFront + WAF → ALB → EC2 ASG → RDS MySQL Multi-AZ + ElastiCache Redis |
-| **AWS Serverless API** | Cognito → API Gateway → Lambda → DynamoDB + SQS + SNS + CloudWatch |
-| **EKS Production Cluster** | NLB → Ingress → Istio → Microservices → Kafka → PostgreSQL + Redis + ArgoCD |
-| **AWS VPC Architecture** | IGW → ALB → Public/Private subnets across 2 AZs → NAT Gateway → Transit GW + VPN |
-
-### 🔷 Azure (5 templates)
-
-| Template | Key Services |
-|---|---|
-| **Azure AKS Microservices** | Front Door → APIM → AKS → Cosmos DB + Service Bus + Key Vault + Monitor |
-| **Azure 3-Tier Web App** | Front Door + WAF → CDN → App Service → Azure SQL + Cosmos DB + Redis |
-| **Azure Serverless Event-Driven** | Azure AD B2C → APIM → Functions (HTTP/Event/Timer/Blob) → Event Hubs + Service Bus + Event Grid |
-| **Azure Data Platform** | ADF + Event Hubs → ADLS Gen2 (Raw/Curated/Gold) → Databricks → Synapse + Power BI + Purview |
-| **Azure DevSecOps Pipeline** | Azure Repos → Pipelines → SonarCloud + Defender + Checkov → ACR → AKS Staging → Approval → AKS Prod |
-
-### 🌐 GCP (5 templates)
-
-| Template | Key Services |
-|---|---|
-| **GCP Data Platform** | Pub/Sub → Dataflow → BigQuery → Vertex AI → Looker Studio + Cloud Composer |
-| **GCP 3-Tier Web App** | Cloud Armor → CDN → Load Balancer → Cloud Run → Cloud SQL + Memorystore + Secret Manager |
-| **GCP GKE Production** | GLB → Cloud Armor → GKE Ingress → Anthos Service Mesh → Microservices → Cloud SQL + Firestore |
-| **GCP Serverless Event-Driven** | Firebase Auth → API Gateway → Cloud Functions → Pub/Sub + Eventarc → Firestore + BigQuery + Vertex AI |
-| **GCP Data Engineering** | Datastream CDC + Pub/Sub → GCS Raw/Curated zones → Dataflow + Dataproc + dbt → BigQuery → Looker + Dataplex |
-
-### ⎈ Kubernetes (5 templates)
-
-| Template | Key Services |
-|---|---|
-| **K8s Microservices** | Ingress → Istio mesh → API GW + 4 services → Kafka → per-service DBs + ArgoCD + Prometheus |
-| **K8s RBAC & Security** | OIDC → kube-apiserver → RBAC/ClusterRole → PSA + OPA Gatekeeper + NetworkPolicy → Vault + Falco |
-| **K8s Multi-Tenant Platform** | Ingress + cert-manager + ArgoCD + KEDA → 3 isolated namespaces → Prometheus + Loki shared |
-| **K8s Networking Deep Dive** | LoadBalancer → NodePort → NGINX Ingress → Gateway API → Cilium eBPF + Envoy mTLS + CoreDNS |
-| **K8s Stateful Workloads** | CloudNativePG + Redis Operator + Strimzi Kafka → StatefulSets + PVCs → CSI Driver → Velero backup |
-
-### Other (5 templates)
-
-| Template | Platform | Key Services |
-|---|---|---|
-| **GitHub Actions CI/CD** | CI/CD | Push → Build → Trivy + SonarQube → Staging EKS → Approval → Prod EKS + PagerDuty |
-| **Terraform IaC Graph** | Terraform | Root module → VPC/EKS/RDS/S3 modules → Remote state (S3 + DynamoDB lock) |
-| **Docker Compose Stack** | Docker | Nginx → React + Node.js API → Postgres + Redis + RabbitMQ → Prometheus + Grafana |
-| **Full Observability Stack** | Observability | OTel Collector → Prometheus + Loki + Jaeger → Grafana + Alertmanager → PagerDuty + Slack |
-| **Zero Trust Network** | Network | Cloudflare WAF → ZTNA → Okta MFA → Policy Engine → Istio mTLS → Vault + Falco + SIEM |
-
----
-
-## 🚀 Getting Started
-
-###  Use the hosted version
-Visit **[arch.eknathalabs.com](https://arch.eknathalabs.com)** — no setup needed.
-
-
-
-## 🔑 API Key Setup (AI Mode + Node Expand AI)
-
-1. Get a free API key at [console.anthropic.com](https://console.anthropic.com)
-2. In ArchLab, paste your key (`sk-ant-api03-...`) into the **API KEY** field in the sidebar
-3. Click **Save** — stored in `localStorage` only, never sent anywhere except Anthropic's API
-4. Ensure **AI Mode** is active via the toggle in the header
-
-> **No API key?** Use **Offline Mode** — all 24 templates, keyword parser, sequence diagrams, blast radius, minimap, and step-by-step mode all work without any key. The Node Expand modal falls back to a static description.
-
----
-
-## 📐 How It Works
-
-### AI Generation Flow
-```
-User prompt
-    │
-    ▼
-Claude Sonnet API (claude-sonnet-4-20250514)
-    │   System prompt enforces structured JSON schema:
-    │   { title, groups[], nodes[], edges[] }
-    ▼
-JSON parsed and validated
-    │
-    ▼
-SVG Renderer (pure JS, theme-aware)
-    │   layoutNodes()  → group-aware grid layout
-    │   renderSVG()    → nodes, edges, group boxes
-    │                    stores positions globally
-    ▼
-Inline SVG + Minimap + Sequence + Blast + Expand
-```
-
-### Offline Keyword Flow
-```
-User prompt → token map lookup (AWS/Azure/GCP/K8s services)
-           → generic phrase matching (Kafka, Grafana, Vault…)
-           → auto-edge generation
-           → SVG Renderer
-```
-
-### Sequence Diagram Derivation
-```
-Architecture edges (ordered)
-    │
-    ▼
-Actors = diagram nodes (up to 8)
-Lifelines drawn per actor
-Each edge → numbered message arrow
-Return/response edges → dashed arrow
-Self-call edges → loop notation
-```
-
-### Blast Radius Algorithm
-```
-Click node X
-    ├─► BFS downstream → all nodes X transitively feeds into → Amber highlight
-    └─► BFS upstream   → all nodes that feed into X          → Cyan highlight
-                          X itself                           → Red highlight
-```
-
-### Step-by-Step Layer Build
-```
-Groups → Layer 1 (group 1 nodes only)
-       → Layer 2 (add group 2)
-       → Layer N (full diagram)
-         ↑ Play auto-advances every 1.2s
-         ↑ Layer chips for direct jump
-         ↑ Progress bar tracks position
-```
-
-### DSL Export Format
-```
-# Architecture: AWS 3-Tier Web App
-# Platform: AWS
-# Generated by ArchLab — arch.eknathalabs.com
-# Mode: AI Generated
-
-GROUPS:
-  [g_edge] "Edge / CDN Layer"  color:#1a1800
-  [g_private] "Private Subnet — App Tier"  color:#0d0020
-
-NODES:
-  (cf) "CloudFront CDN"  icon:☁  group:g_edge
-  (alb) "Application Load Balancer"  icon:☁  group:g_public
-  (ec2a) "EC2 Auto Scaling App Server (AZ-a)"  icon:☁  group:g_private
-
-CONNECTIONS:
-  cf --> alb
-  alb --> ec2a [round-robin]
-  ec2a --> rds_p [SQL]
-```
-
----
-
-## 🎮 Keyboard Shortcuts
-
-| Shortcut | Action |
-|---|---|
-| `Ctrl + Enter` | Generate diagram from prompt |
-| Click `▶ Steps` | Open step-by-step build panel |
-| `← / →` in Steps panel | Navigate layers |
-| Click `💥 Blast` → click node | Show blast radius |
-| Click `🔍 Expand` → click node | Open node detail modal |
-| Click `Sequence` tab | Show sequence diagram |
-| Click `⊞ Map` | Toggle minimap |
-| `🌙 / ☀️` | Toggle dark / light theme |
-| `☰` (mobile) | Toggle sidebar drawer |
-
----
-
-## 🛠 Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | Vanilla HTML/CSS/JS — single file, zero build step |
-| AI Generation | Anthropic Claude API (`claude-sonnet-4-20250514`) |
-| AI Node Explain | Anthropic Claude API (inline, per node click) |
-| Diagram Rendering | Pure SVG, custom JS layout engine |
-| Sequence Diagrams | SVG, derived from architecture edge data |
-| Minimap | HTML5 Canvas, real-time scroll sync |
-| Theme System | CSS custom properties + `prefers-color-scheme` |
-| Fonts | JetBrains Mono + Syne (Google Fonts) |
-| Hosting | GitHub Pages / Cloudflare Pages |
-| Storage | `localStorage` for API key + theme preference only |
-
----
-
-## 📁 Project Structure
-
-```
-archlab/
-├── index.html          # Entire application (~156KB, 2,916 lines)
-│                         57 functions · 24 templates · 9 platforms
-└── README.md           # This file
-```
-
-No dependencies. No npm. No build. One file.
-
----
-
-## 🔗 Related Tools — eknathalabs.com
-
-| Tool | URL | Description |
-|---|---|---|
-| KubeLab | kubelab.eknathalabs.com | Kubernetes learning lab |
-| TerraformLab | terraform.eknathalabs.com | Terraform IaC reference |
-| Linux Command Explainer | linux-command-explainer.eknathalabs.com | Linux command reference |
-| GitHub Profile Analyzer | github-profile-analyzer.eknathalabs.com | GitHub portfolio analyzer |
-| Interview Prep | interview-prep.eknathalabs.com | DevOps/Cloud interview prep |
-| Resumelytics | resumelytics.eknathalabs.com | Resume analyzer |
-| CI/CD Lab | cicd.eknathalabs.com | CI/CD pipeline reference |
-| ChaosLab | chaoslab.eknathalabs.com | Chaos engineering playground |
-| Docker Lab | docker.eknathalabs.com | Docker reference |
-| Linux Lab | linux.eknathalabs.com | Linux for DevOps |
-| Blog | blog.eknathalabs.com | DevOps articles |
-| Learn | learn.eknathalabs.com | Learning paths |
-
----
-
-
-
-**Adding a template** — each template is a JS object in the `TEMPLATES` map:
-
-```javascript
-myTemplate: {
-  platform: 'gcp',      // aws | azure | gcp | k8s | cicd | tf | docker | net | obs
-  title: 'My Architecture',
-  groups: [
-    { id: 'g_1', label: 'Layer Name', color: '#00071a' }
-  ],
-  nodes: [
-    { id: 'n_1', label: 'Service\nSubtitle', icon: '☁', color: '#4285f4', group: 'g_1' }
-  ],
-  edges: [
-    { from: 'n_1', to: 'n_2', label: 'HTTP' }
-  ]
-}
-```
-
-Then add a sidebar button in the `<!-- Templates -->` section:
-```html
-<button class="tbtn" onclick="useTpl('myTemplate')">
-  <span class="ti">☁</span>
-  <span class="tname">My Architecture</span>
-</button>
-```
-
----
-
-## 📋 Changelog
-
-### v2.0
-- ✦ AI Mode via Claude Sonnet API with structured JSON diagram generation
-- ✦ Offline / AI mode toggle
-- ✦ Quick prompt chips in empty state
-- ✦ Export: SVG, PNG, DSL
-
-### v2.1
-- ✦ Dark / Light mode with `prefers-color-scheme` auto-detect
-- ✦ Mobile-optimized sidebar drawer and responsive toolbar
-- ✦ Step-by-step build mode with play/pause and layer navigation
-- ✦ Blast radius visualizer with BFS impact analysis and SVG highlighting
-
-### v2.2
-- ✦ GCP architecture templates (5 total: Data Platform, 3-Tier, GKE, Serverless, Data Engineering)
-- ✦ Azure architecture templates (5 total: AKS, 3-Tier, Serverless, Data Platform, DevSecOps)
-- ✦ Kubernetes deep-dive templates (5 total: Microservices, RBAC & Security, Multi-Tenant, Networking, Stateful Workloads)
-
-### v2.3 (current)
-- ✦ **Sequence Diagram** tab — auto-derived from architecture edges, full SVG with lifelines, numbered steps, return flows
-- ✦ **Node Expand modal** — click any node to see connections, group, and AI-generated explanation
-- ✦ **Minimap** — real-time canvas overview with scroll-synced viewport indicator
-- ✦ Platform button click fix — `pointer-events:none` on child spans + delegated listener
-- ✦ Blast radius fix — mode toggle now immediately wires SVG click handler
-
----
-
-## 📄 License
-
-MIT — free to use, fork, and build on.
-
----
-
-<div align="center">
-  Built by <a href="https://eknathalabs.com">Eknatha Reddy Puli</a> · <a href="https://github.com/eknatha">@eknatha</a>
-  <br/>
-  <sub>arch.eknathalabs.com · Part of the eknathalabs DevOps learning platform</sub>
-</div>
+> **[arch.eknathalabs.com](https://arch.eknathalabs.com)** · Part of the [eknathalabs.com](https://eknathalabs.com) DevOps learning platform
+
+Describe an architecture (or pick a template) and get an editable, animated diagram with real vendor icons, nested VPC / subnet / cluster boundaries, security and cost lenses, threat modelling, failure simulation and Terraform / Kubernetes / Compose scaffolds. Runs in one HTML file — no build step, no server. **Offline by default**: installable as an app, works with the network off, and makes no third-party requests. AI is opt-in (Claude with your own key, or a local model through Ollama).
+
+![ArchLab](og-image.png)
+
+## Features
+
+**Generate**
+- **AI mode** — Claude produces the diagram as JSON. Output is schema-validated and sanitised; on a malformed reply ArchLab retries once, then falls back to the offline parser. Pick Sonnet 5.5 (default), Opus 5.5, Haiku 5.5 or a custom model id.
+- **Offline mode** — 29 templates plus a keyword parser; nothing leaves your browser.
+- **Template browser** — searchable gallery with live thumbnails (press `T`).
+- **Refine chat** — "add a cache after the API", "remove the CDN", "rename X to Y", "connect A to B". AI mode sends the current diagram to Claude; offline mode understands add / remove / rename / connect.
+
+**Edit** (`E`)
+- Drag nodes, connect, rename, duplicate, delete, add from a catalog with vendor icons; drop a node into a container to re-parent it. Full undo / redo, autosave to your browser.
+- **Containers & boundaries** — groups nest (region → VPC → subnet / AZ / namespace) and are laid out as boundaries.
+- Layout direction toggle (left→right / top→bottom) with animated morph.
+
+**Understand**
+- **Lenses** — Default, Security, Cost, Data, Blast, Latency; strokes and badges cross-fade in place.
+- **Blast radius** — click a node and watch the impact ripple out hop by hop.
+- **Failure simulation** — kill nodes or whole zones, run chaos mode, find single points of failure; shows degraded / down nodes and path availability.
+- **Anti-patterns overlay** — heuristic checks (SPOF, exposed datastore, missing cache / queue / WAF, …).
+- **Threat model** — STRIDE per component plus trust-boundary crossings; export as Markdown.
+- **Explain this architecture** — typed narration (AI or offline) that walks the flow node by node.
+- Step-by-step build, sequence view, minimap, DSL view.
+
+**Build / Export** — every export carries an ArchLab watermark (see below)
+- **IaC scaffolds** — Terraform (AWS / Azure / GCP), Kubernetes YAML, Docker Compose, Mermaid. Scaffolds are a starting point, not production-ready.
+- SVG, PNG, PDF (print), design document (HTML / Markdown), DSL, project file (`.archlab.json`, re-openable).
+- **Share link** — the whole diagram is compressed into the URL hash (`#s=`), nothing is uploaded.
+- **Embed** — `?embed=1` read-only viewer with a "Made with ArchLab" badge; copy the iframe snippet from Export → Embed. `badge.svg` is included for READMEs.
+
+**Polish** — animated edges and staggered node entrance, command palette (`Ctrl/⌘+K`), keyboard shortcuts (`?`), light / dark theme, minimap, `prefers-reduced-motion` respected, ARIA labels and visible focus rings.
+
+**Offline & local (v3.1)**
+- **Installable PWA** — `sw.js` caches the app on first visit; the header chip shows *Offline-ready*. Updates arrive through a "new version" bar, never silently.
+- **Download a copy** — Export → *Download ArchLab* saves the whole app as one file; *with this diagram* embeds the current design so the file opens straight to it.
+- **My library** — diagrams and up to 25 versions each, kept in your browser (IndexedDB). Rename, tag, search, restore, and **compare any version with the current diagram** (added / changed shown on the canvas).
+- **Import** — Terraform (VPC/subnet nesting from references), docker-compose, Kubernetes YAML and Mermaid flowcharts (including `A & B` and subgraphs). Everything is parsed locally.
+- **Export for other tools** — draw.io (`.drawio`) and Excalidraw (`.excalidraw`), both watermarked.
+- **Cost estimate** and **compliance checklist** (PCI DSS v4, CIS v8, ISO 27001:2022, SOC 2 control families) — rough ranges and informational mappings, not a bill or an audit.
+- **Present mode** (slides from the explanation, blast-radius slide, laser pointer) and **Quiz mode**.
+- 12 architecture patterns with *use when / breaks when* notes, first-run tour, clickable lens counts, flow particles, inspector tabs, pinch / long-press on touch, print options (A3/A4/Letter/Tabloid, title block, legend), command-palette recents.
+- **Local AI (optional)** — choose *Local model (Ollama)* in the AI box. Only `http://localhost:11434` / `127.0.0.1:11434` is allowed; start Ollama with `OLLAMA_ORIGINS` set to this site's origin.
+
+**Motion & polish (v3.2)**
+- **Build-up** — groups first, then components in dependency order with a small spring, then connections draw themselves. Repeat visits skip the long version.
+- **Typewriter prompt** (Tab accepts the suggestion), a **progress sweep and check** on the Generate button, and a **ghost skeleton** while an AI model is thinking.
+- **Direct manipulation** — magnetic connect (snaps to the nearest target), alignment guides with gap labels while dragging, settle on drop, nodes shrink out on delete and spring back on undo, hover trace of the full upstream / downstream path with faster particles.
+- **Failure simulation** — damage ripples hop by hop, dropped traffic scatters at the break, recovery heals in a green wave, and a timeline scrubber (with play) steps through the failure.
+- **Analysis** — radial lens wipe, rolling lens counts, pulsing severe findings, cost bars and total that count up, a clickable compliance ring that filters the checklist.
+- **Shell** — context bar with a real saved-state dot, progressive toolbar, panels that nudge the canvas, compact / comfortable density, a View-Transition theme reveal, an offline chip that shows a plug when the network drops, and a watermark stamp on every export.
+- **Touch** — panels become draggable bottom sheets with snap points, one-time pinch / long-press hint, light haptics where the browser supports them.
+- **Sound** is off by default (palette → *Toggle sound effects*). All motion uses shared timing tokens and turns off with *Reduce motion* or the system setting.
+
+## Watermarks
+
+Everything that leaves the app carries a visible "ArchLab · arch.eknathalabs.com" mark: SVG, PNG, PDF/print (tiled), design doc, DSL, project files and every IaC scaffold. A watermark is a deterrent and attribution, not protection — it cannot stop screenshots.
+
+## Privacy & security
+
+- No analytics, no visitor counter, no fonts or scripts from other sites. In the default build the only places the page may connect are itself, `api.anthropic.com` (only when you choose Claude AI) and your own Ollama on localhost.
+- **Strict build:** `ARCHLAB_OFFLINE_ONLY=1 python3 build/build.py` sets `connect-src 'self'` and hides the AI button entirely.
+- Your API key lives in `sessionStorage` (this tab only) unless you tick **Remember on this device**. It is sent only to `api.anthropic.com`.
+- The CSP still needs `'unsafe-inline'` for scripts because the app uses inline handlers.
+- AI output, imports and share-link payloads are validated and sanitised (markup stripped, colours whitelisted, reserved ids rejected, unknown edges dropped) before rendering.
+- The service worker only handles same-origin requests and never touches cross-origin traffic. The privacy button in the header lists everything stored.
+
+## Keyboard shortcuts
+
+Press `?` in the app for the full list. Highlights: `Ctrl/⌘+K` command palette · `T` templates · `E` edit · `C` connect · `B` blast · `S` simulate · `X` explain · `A` anti-patterns · `I` IaC · `R` refine chat · `L` cycle lens · `M` minimap · `Ctrl+Z / Y` undo / redo · `Ctrl+S` save project · `Ctrl+P` print / PDF · `Ctrl+wheel` zoom · `Esc` close.
+
+## Getting started
+
+Use the hosted site, or open `index.html` locally. To self-host, serve the folder from any static host (GitHub Pages with the included `CNAME`, Netlify, S3…).
+
+**Deploy these files together** (the service worker and manifest are separate files): `index.html`, `sw.js`, `manifest.webmanifest`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `og-image.png`, `badge.svg`. The service worker registers only over http(s); opened from `file://` the app still works, it just isn't installable.
+
+For AI mode paste an Anthropic key from [console.anthropic.com](https://console.anthropic.com) into the AI box. Offline mode needs nothing.
+
+## Icons & licensing
+
+Brand marks are the [Simple Icons](https://simpleicons.org) set (CC0 1.0), 65 brands embedded as SVG paths. AWS, Azure, Slack and similar brands that Simple Icons does not carry use original generic glyphs tinted in the vendor colour. Product names and logos remain the property of their owners and are used only to identify the technology. ArchLab itself is MIT-licensed.
+
+## Tech stack
+
+Vanilla HTML / CSS / JS, inline SVG. No framework, no bundler, no runtime dependencies. Share links use the browser's `CompressionStream`. Fonts: Syne, JetBrains Mono.
+
+## Changelog
+
+### v3.2 (current)
+- Motion system (tokens, reduced-motion), build-up choreography, typewriter prompt, generate progress + skeleton
+- Magnetic connect, alignment guides, hover path trace, delete / undo animation
+- Cascading failure with heal and timeline scrubber; lens wipe; risk pulse; animated cost bars; compliance ring
+- Context bar, progressive toolbar, density toggle, theme reveal, stamp on export, offline plug chip
+- Bottom sheets, gesture hint, haptics, optional sound
+
+### v3.1
+- Offline-first: PWA + service worker, no third-party requests, analytics and visitor counter removed, strict `OFFLINE_ONLY` build
+- Library with versions and diff; importers (Terraform, Compose, K8s, Mermaid); draw.io and Excalidraw export
+- Cost estimate, compliance checklist, present mode, quiz mode, 12 patterns, tour, print options, touch gestures
+- Optional local AI via Ollama; downloadable self-contained copy
+- Fixes found in testing: print options were not applied, library search had no handler, version-compare overlay was cleared immediately, `A & B` Mermaid shorthand now imports, generate button label kept its provider text
+
+### v3.0
+- Animated edges, staggered node entrance, cross-fading lenses, blast-radius ripple, layout morphing
+- Editable canvas with undo / redo and autosave; containers and nested boundaries; real vendor icons
+- IaC scaffolds, failure simulation, refine chat, explain-this-architecture, anti-pattern overlay, threat model
+- Template browser, command palette, redesigned toolbar menus, theme polish, minimap polish
+- Share links, embed mode + badge, project files; watermark on every export
+- Model picker, AI output validation with retry and offline fallback, sanitised rendering, session-scoped key, CSP
+- Privacy-respecting optional analytics; OG / Twitter / canonical meta; accessibility pass; mobile header fix
+
+### v2.x
+- AI mode, offline mode, dark / light theme, mobile drawer, step-by-step build, blast radius, node expand, sequence view, minimap, Azure / GCP / Kubernetes templates
+
+## Related tools — eknathalabs.com
+
+K8s Lab, CI/CD Lab, ChaosLab, Docker Lab, Linux Lab, Blog and Learn live at `*.eknathalabs.com`.
+
+## License
+
+MIT — see `LICENSE`.
+
+<div align="center">Built by <a href="https://eknathalabs.com">Eknatha Reddy Puli</a> · <a href="https://github.com/eknatha">@eknatha</a></div>
