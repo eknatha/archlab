@@ -1,5 +1,5 @@
-/* ArchLab service worker — cache-first, same-origin only. Version 72847ca1c6 */
-const CACHE = 'archlab-72847ca1c6';
+/* ArchLab service worker — cache-first, same-origin only. Version 6fcaa05160 */
+const CACHE = 'archlab-6fcaa05160';
 const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'badge.svg', 'og-image.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(ASSETS.map(a => c.add(new Request(a, { cache: 'reload' })).catch(() => {})))));

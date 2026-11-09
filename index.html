@@ -5758,7 +5758,7 @@ toggleExpandMode = function () { if (!expandModeActive) exitModes('expand'); _to
 //  self-contained copies. No third-party requests are ever made by this file.
 // ═══════════════════════════════════════════════════════════════════
 const OFFLINE_ONLY = false;
-const APP_VERSION = "72847ca1c6";
+const APP_VERSION = "6fcaa05160";
 let swWaiting = null;
 
 function setChip(cls, text, title) {
@@ -8891,12 +8891,22 @@ getCommands = function () {
   return list.concat([c('View', 'Toggle sound effects', toggleSound), c('View', 'Toggle compact / comfortable layout', toggleDensity)]);
 };
 
+// ── platform buttons: make a click do something visible ──
+function moPlatformClick(e) {
+  const btn = e.target.closest && e.target.closest('.pbtn'); if (!btn) return; setTimeout(() => {
+    const p = btn.dataset.p, label = PLAT_LABEL[p] || p, txt = ($('#prompt').value || '').trim();
+    if (typeof appMode !== 'undefined' && appMode === 'offline' && txt && !$('#genbtn').disabled) { toast(label + ' selected — redrawing your description', 'info', 2200); generate(); return; }
+    if (Object.values(TEMPLATES).some(t => t.platform === p)) { tplFilter = p; toast(label + ' selected — pick a template, or describe your system', 'info', 2600); openTplPicker(); }
+    else toast(label + ' selected — it shapes the next diagram you generate', 'info', 2600);
+  }, 0);
+}
+
 // ── boot ──
 function initMotion() {
   try { if (moGet('archlab_density', '') === 'compact') document.body.classList.add('density-compact'); } catch (e) {}
   if (moGet('archlab_seen', '0') === '1' && !EMBED) { document.body.classList.add('quick-enter'); setTimeout(() => document.body.classList.remove('quick-enter'), 2600); }
   moSet('archlab_seen', '1');
-  moInitCtx(); moInitToolbar(); moInitTypewriter(); moInitInteractions(); moInitSheets(); moNetwork();
+  moInitCtx(); moInitToolbar(); moInitTypewriter(); moInitInteractions(); $('.platforms') && $('.platforms').addEventListener('click', moPlatformClick); moInitSheets(); moNetwork();
   if (currentData) { document.body.classList.add('has-dx'); moCtxUpdate(); }
 }
 window.addEventListener('DOMContentLoaded', () => setTimeout(initMotion, 0));
